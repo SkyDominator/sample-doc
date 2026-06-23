@@ -197,19 +197,21 @@ def _translate_file(
     if target.exists() and target.read_text(encoding="utf-8") == output:
         return "unchanged", target
 
-    target.write_text(output, encoding="utf-8", newline="")
+    target.write_text(output, encoding="utf-8")
     return "updated", target
 
 
 def main() -> int:
-    _load_dotenv(Path(".env.local"))
+    script_root = Path(__file__).resolve().parent.parent
+    _load_dotenv(script_root / ".env.local")
+    _load_dotenv(Path.cwd() / ".env.local")
 
     ok, message = validate_env()
     if not ok:
         print(f"translate_docs.py: {message}")
         return 2
 
-    root = Path("docs/content/docs")
+    root = script_root / "docs/content/docs"
     if not root.exists():
         print("translate_docs.py: docs root not found")
         return 2
