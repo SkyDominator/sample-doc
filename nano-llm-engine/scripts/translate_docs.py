@@ -17,6 +17,7 @@ from urllib.request import Request, urlopen
 REQUIRED_ENV = ("GOOGLE_TRANSLATE_API_KEY", "GOOGLE_TRANSLATE_PROJECT_ID")
 TOKEN_RE = re.compile(r"__PH_\d{6}__")
 TEXT_KEYS = {"title", "description", "sidebarTitle"}
+MOCK_MODE_TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
 def _load_dotenv(dotenv_path: Path) -> None:
@@ -170,6 +171,15 @@ def validate_env() -> tuple[bool, str]:
     return True, "ok"
 
 
+def _is_mock_mode() -> bool:
+    value = os.environ.get("TRANSLATE_MOCK_MODE", "")
+    return value.strip().lower() in MOCK_MODE_TRUE_VALUES
+
+
+def _mock_translate_call(text: str) -> str:
+    return text
+
+
 def _translate_file(
     source: Path,
     call_translate,
@@ -206,24 +216,31 @@ def main() -> int:
     _load_dotenv(script_root / ".env.local")
     _load_dotenv(Path.cwd() / ".env.local")
 
-    ok, message = validate_env()
-    if not ok:
-        print(f"translate_docs.py: {message}")
-        return 2
+    mock_mode = _is_mock_mode()
+
+    if not mock_mode:
+        ok, message = validate_env()
+        if not ok:
+            print(f"translate_docs.py: {message}")
+            return 2
 
     root = script_root / "docs/content/docs"
     if not root.exists():
         print("translate_docs.py: docs root not found")
         return 2
 
-    api_key = os.environ["GOOGLE_TRANSLATE_API_KEY"]
-    project_id = os.environ["GOOGLE_TRANSLATE_PROJECT_ID"]
-    location = os.environ.get("GOOGLE_TRANSLATE_LOCATION", "global")
     glossary_raw = os.environ.get("GOOGLE_TRANSLATE_GLOSSARY", "")
     glossary_terms = [t.strip() for t in glossary_raw.split(",") if t.strip()]
     max_workers = max(1, min(int(os.environ.get("TRANSLATE_MAX_WORKERS", "4")), 8))
 
-    call_translate = _google_translate_api_call_factory(api_key, project_id, location)
+    if mock_mode:
+        call_translate = _mock_translate_call
+        print("translate_docs.py: TRANSLATE_MOCK_MODE enabled; copying Korean docs to English outputs")
+    else:
+        api_key = os.environ["GOOGLE_TRANSLATE_API_KEY"]
+        project_id = os.environ["GOOGLE_TRANSLATE_PROJECT_ID"]
+        location = os.environ.get("GOOGLE_TRANSLATE_LOCATION", "global")
+        call_translate = _google_translate_api_call_factory(api_key, project_id, location)
 
     sources = [
         p

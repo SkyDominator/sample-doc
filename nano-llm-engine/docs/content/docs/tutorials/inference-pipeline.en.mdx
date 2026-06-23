@@ -1,6 +1,85 @@
 ---
-title: Inference Pipeline Tutorial
-description: End-to-end inference pipeline example
+title: 추론 파이프라인 튜토리얼
+description: 엔드투엔드 추론 파이프라인 예제
 ---
 
-# Inference Pipeline
+# 추론 파이프라인
+
+이 튜토리얼은 실제 서비스 문서처럼 "설정 -> 로드 -> 생성 -> 스트리밍 -> 모니터링 -> 종료" 순서로 구성되어 있습니다.
+모든 코드는 CI에서 실행 가능한 형태를 유지합니다.
+
+## 1) 런타임 초기화
+
+```python
+import os
+
+from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(
+    model_path="models/mock-llm.bin",
+    quantization="INT8",
+    kv_cache_config=KVCacheConfig(max_seq_len=8192, cache_dtype="fp16"),
+)
+engine.load_to_device(device_id=0)
+```
+
+## 2) 단건 생성 요청
+
+```python
+from nano_llm import InferenceConfig
+
+cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
+out = engine.generate("SDK 문서 자동 검증의 장점 세 가지를 알려줘", cfg)
+print(out)
+```
+
+## 3) 스트리밍 요청
+
+```python
+from nano_llm import InferenceConfig
+
+for token in engine.generate_streaming(
+    "배치 추론과 지연 시간의 관계를 요약해줘",
+    InferenceConfig(max_tokens=40, temperature=0.1),
+):
+    print(token)
+```
+
+## 4) 메모리 텔레메트리 확인
+
+```python
+stats = engine.get_device_memory()
+print(stats["total_mb"], stats["used_mb"])
+```
+
+## 5) 오류 처리 패턴
+
+```python
+import os
+
+from nano_llm import NanoLLMEngine
+from nano_llm.errors import DeviceNotFoundError
+
+os.environ.pop("MOCK_RNGD_HARDWARE", None)
+
+probe = NanoLLMEngine(model_path="models/mock-llm.bin")
+try:
+    probe.load_to_device(0)
+except DeviceNotFoundError as exc:
+    print(f"recoverable error: {exc}")
+```
+
+## 6) 종료
+
+```python
+engine.unload()
+```
+
+## 운영 체크리스트
+
+1. 샘플 코드가 실제로 실행되는가?
+2. 실패 시 메시지가 문서 설명과 일치하는가?
+3. 릴리즈 시점 API 시그니처가 자동 문서에 반영되는가?
+4. 번역본이 코드/MDX 문법을 보존하는가?

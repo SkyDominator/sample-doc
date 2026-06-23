@@ -40,7 +40,14 @@ jobs:
           GOOGLE_TRANSLATE_API_KEY: ${{ secrets.GOOGLE_TRANSLATE_API_KEY }}
           GOOGLE_TRANSLATE_PROJECT_ID: ${{ secrets.GOOGLE_TRANSLATE_PROJECT_ID }}
           GOOGLE_TRANSLATE_LOCATION: ${{ vars.GOOGLE_TRANSLATE_LOCATION }}
-        run: python scripts/translate_docs.py
+          TRANSLATE_MOCK_MODE: ${{ vars.TRANSLATE_MOCK_MODE }}
+        run: |
+          if [ -n "$GOOGLE_TRANSLATE_API_KEY" ] && [ -n "$GOOGLE_TRANSLATE_PROJECT_ID" ]; then
+            python scripts/translate_docs.py
+          else
+            echo "Translation credentials are unavailable. Falling back to TRANSLATE_MOCK_MODE=true."
+            TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
+          fi
 
       - name: Validate snippets against mock SDK
         env:

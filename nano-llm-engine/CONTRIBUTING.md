@@ -33,6 +33,16 @@ chmod 600 .env.local
 
 `translate_docs.py` loads `.env.local` automatically.
 
+If credentials are unavailable during local demo or CI rehearsal, you can temporarily use:
+
+```bash
+TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
+```
+
+In mock mode, Korean source docs are copied to `*.en.mdx` without external API calls.
+
+The GitHub Actions workflow uses the same fallback behavior. If translation secrets are missing, CI switches to mock mode so validation, build, and link checking can still run.
+
 ## Translation rules
 
 - Preserve frontmatter keys and MDX structure.

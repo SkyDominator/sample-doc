@@ -1,6 +1,6 @@
 ---
-title: API Reference: NanoLLMEngine
-description: Auto-generated API reference for NanoLLMEngine
+title: API 레퍼런스: NanoLLMEngine
+description: NanoLLMEngine 자동 생성 API 문서
 ---
 
 # NanoLLMEngine
@@ -12,9 +12,9 @@ Args:
     quantization: Quantization mode used for mock inference.
     kv_cache_config: Optional KV cache configuration.
 
-## Methods
+## 메서드
 
-### Method: `generate(prompt, config=None)`
+### 메서드: `generate(prompt, config=None)`
 
 ```python
 # Signature: NanoLLMEngine.generate(prompt, config=None)
@@ -34,7 +34,7 @@ Raises:
     GenerationError: If the engine was not loaded first.
 
 
-### Method: `generate_streaming(prompt, config=None)`
+### 메서드: `generate_streaming(prompt, config=None)`
 
 ```python
 # Signature: NanoLLMEngine.generate_streaming(prompt, config=None)
@@ -51,7 +51,7 @@ Yields:
     Whitespace-split tokens from the mock generation output.
 
 
-### Method: `get_device_memory()`
+### 메서드: `get_device_memory()`
 
 ```python
 # Signature: NanoLLMEngine.get_device_memory()
@@ -64,7 +64,7 @@ Returns:
     Dictionary with total and used memory in MB.
 
 
-### Method: `load_to_device(device_id=0)`
+### 메서드: `load_to_device(device_id=0)`
 
 ```python
 # Signature: NanoLLMEngine.load_to_device(device_id=0)
@@ -83,7 +83,7 @@ Raises:
     DeviceNotFoundError: If `MOCK_RNGD_HARDWARE` is not set.
 
 
-### Method: `unload()`
+### 메서드: `unload()`
 
 ```python
 # Signature: NanoLLMEngine.unload()

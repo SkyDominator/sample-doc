@@ -49,10 +49,15 @@ chmod 600 .env.local
 
 The translation script automatically loads `.env.local` if it exists.
 
+If you do not have translation credentials yet, you can run a temporary mock mode that copies Korean source docs into English outputs.
+
 ```bash
 python scripts/generate_api.py
 python scripts/validate_snippets.py
 python scripts/translate_docs.py
+
+# temporary demo mode without Google API credentials
+TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 ```
 
 ### Build docs site
@@ -74,6 +79,8 @@ pnpm --prefix docs build
 
 - `docs-ci.yml`: lint, test, API generation, translation, snippet execution, docs build, link check
 - `docs-release.yml`: release-tag trigger and docs snapshot freeze
+
+When GitHub translation secrets are unavailable, `docs-ci.yml` falls back to `TRANSLATE_MOCK_MODE=true` so the full docs pipeline can still be demonstrated end to end. This fallback is intended for portfolio rehearsal, offline demos, and CI smoke checks rather than production translation quality.
 
 ## Local secret handling
 
