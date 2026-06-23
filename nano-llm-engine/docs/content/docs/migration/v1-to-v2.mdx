@@ -4,3 +4,56 @@ description: API 변경사항과 이전 절차
 ---
 
 # v1 to v2 마이그레이션
+
+이 문서는 `nano-llm-engine` API 변경을 예시로, 릴리즈 노트와 함께 사용하는 마이그레이션 가이드를 보여줍니다.
+
+## 변경 요약
+
+- `quantization` 기본값 유지 (`FP16`)
+- `KVCacheConfig`를 명시적으로 생성해 전달하는 패턴 권장
+- 스트리밍 인터페이스를 기본 경로로 문서화
+
+## Before (v1 스타일)
+
+```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock.bin")
+engine.load_to_device(0)
+print(engine.generate("hello"))
+```
+
+## After (v2 권장 스타일)
+
+```python
+import os
+
+from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(
+    model_path="models/mock.bin",
+    quantization="INT8",
+    kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),
+)
+engine.load_to_device(0)
+print(engine.generate("hello", InferenceConfig(max_tokens=32, temperature=0.0)))
+```
+
+## 단계별 이전 절차
+
+1. 생성 코드에서 `InferenceConfig`를 명시적으로 전달합니다.
+2. 캐시 정책을 `KVCacheConfig`로 문서화 가능한 형태로 분리합니다.
+3. 주요 샘플은 `generate_streaming` 경로도 함께 제공합니다.
+4. CI에서 `validate_snippets.py`를 실행해 문서 예제를 동기화합니다.
+
+## 회귀 점검 포인트
+
+- 기존 샘플이 환경 변수 누락에 의존하지 않는가?
+- 문서의 시그니처와 실제 코드 시그니처가 일치하는가?
+- 번역본(`*.en.mdx`)이 최신 한국어 본문에서 재생성되는가?

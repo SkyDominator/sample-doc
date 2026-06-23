@@ -22,8 +22,12 @@ def _extract_python_snippets(content: str) -> list[tuple[int, str]]:
     return snippets
 
 
-def _exec_snippet(file_path: Path, start_line: int, code: str) -> tuple[bool, str]:
-    namespace: dict[str, object] = {"__name__": "__snippet__"}
+def _exec_snippet(
+    file_path: Path,
+    start_line: int,
+    code: str,
+    namespace: dict[str, object],
+) -> tuple[bool, str]:
     try:
         compiled = compile(code, f"{file_path}:{start_line}", "exec")
         exec(compiled, namespace, namespace)
@@ -55,9 +59,10 @@ def main() -> int:
         if not snippets:
             continue
 
+        shared_namespace: dict[str, object] = {"__name__": "__snippet__"}
         for start_line, snippet in snippets:
             total_snippets += 1
-            ok, error = _exec_snippet(file_path, start_line, snippet)
+            ok, error = _exec_snippet(file_path, start_line, snippet, shared_namespace)
             if not ok:
                 failed += 1
                 print(

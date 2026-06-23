@@ -23,6 +23,8 @@ jobs:
           cp -r docs/content/docs/guides "$VERSION_DIR/" || true
           cp -r docs/content/docs/api "$VERSION_DIR/" || true
           cp -r docs/content/docs/tutorials "$VERSION_DIR/" || true
+          cp -r docs/content/docs/migration "$VERSION_DIR/" || true
+          cp -r docs/content/docs/troubleshooting "$VERSION_DIR/" || true
 
       - name: Build docs
         run: |

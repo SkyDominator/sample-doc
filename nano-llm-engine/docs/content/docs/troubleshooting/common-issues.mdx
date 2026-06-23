@@ -4,3 +4,81 @@ description: 자주 발생하는 오류와 해결 방법
 ---
 
 # 공통 문제 해결
+
+## 1) DeviceNotFoundError: mock hardware not found
+
+증상:
+- `load_to_device()` 호출 시 `DeviceNotFoundError` 발생
+
+원인:
+- `MOCK_RNGD_HARDWARE` 환경 변수가 설정되지 않음
+
+해결:
+
+```python
+import os
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+```
+
+## 2) GenerationError: engine is not loaded
+
+증상:
+- `generate()` 또는 `generate_streaming()` 호출 시 `GenerationError` 발생
+
+원인:
+- `load_to_device()` 호출 전 생성 함수 실행
+
+해결:
+
+```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+engine = NanoLLMEngine(model_path="models/mock.bin")
+engine.load_to_device(0)
+print(engine.generate("ready"))
+```
+
+## 3) 문서 샘플 검증 실패
+
+증상:
+- CI에서 `validate_snippets.py` 단계 실패
+
+원인:
+- 문서 코드 블록의 import 경로/시그니처/환경변수 누락
+
+해결:
+
+1. 샘플 코드에 `from nano_llm import ...` 경로를 사용했는지 확인
+2. 하드웨어 모의 변수 설정 여부 확인
+3. 최근 API 변경 후 `generate_api.py` 재실행 여부 확인
+
+## 4) 번역 후 MDX 깨짐
+
+증상:
+- 번역 단계 이후 빌드에서 MDX 파싱 오류
+
+원인:
+- 번역 과정에서 코드 펜스/MDX 태그가 손상됨
+
+해결:
+
+1. `translate_docs.py` 로그에서 placeholder 복원 실패 여부 확인
+2. 최근 추가한 MDX 컴포넌트가 보호 패턴에 포함되는지 점검
+3. 문제 파일만 재번역 후 diff 비교
+
+## 5) 링크 검사 실패
+
+증상:
+- `lychee` 단계에서 dead link 감지
+
+원인:
+- 문서 이동 후 상대 링크 미수정
+
+해결:
+
+- 문서 이동 시 링크를 즉시 갱신
+- 빌드 산출물 기준으로 링크 체크를 유지해 릴리즈 전에 실패를 노출

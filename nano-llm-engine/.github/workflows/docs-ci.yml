@@ -27,7 +27,7 @@ jobs:
       - name: Lint and type check
         run: |
           ruff check sdk/
-          mypy sdk/ || true
+          mypy sdk/
 
       - name: Run unit tests
         run: pytest sdk/tests/ -v --cov
@@ -57,7 +57,6 @@ jobs:
         with:
           node-version: "20"
           cache: pnpm
-          cache-dependency-path: docs/pnpm-lock.yaml
 
       - name: Build docs site
         run: |
@@ -65,7 +64,7 @@ jobs:
           pnpm --prefix docs build
 
       - name: Link check
-        uses: lycheeverse/lychee-action@v2
+        uses: lycheeverse/lychee-action@v1.9.0
         with:
           fail: true
           args: >-
