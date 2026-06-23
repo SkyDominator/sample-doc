@@ -35,11 +35,23 @@ pytest sdk/tests/ -v
 
 ### Run docs automation scripts
 
+Store translation secrets in a gitignored local file before running the translation step.
+
+```bash
+cat > .env.local <<'EOF'
+GOOGLE_TRANSLATE_API_KEY=your_api_key_here
+GOOGLE_TRANSLATE_PROJECT_ID=your_project_id_here
+GOOGLE_TRANSLATE_LOCATION=global
+GOOGLE_TRANSLATE_GLOSSARY=KV cache,quantization,batching,token
+EOF
+chmod 600 .env.local
+```
+
+The translation script automatically loads `.env.local` if it exists.
+
 ```bash
 python scripts/generate_api.py
 python scripts/validate_snippets.py
-GOOGLE_TRANSLATE_API_KEY=... \
-GOOGLE_TRANSLATE_PROJECT_ID=... \
 python scripts/translate_docs.py
 ```
 
@@ -62,3 +74,10 @@ pnpm --prefix docs build
 
 - `docs-ci.yml`: lint, test, API generation, translation, snippet execution, docs build, link check
 - `docs-release.yml`: release-tag trigger and docs snapshot freeze
+
+## Local secret handling
+
+- Use `.env.local` for local-only credentials.
+- `.env.local` is ignored by git.
+- Prefer `chmod 600 .env.local` on shared machines.
+- Do not store API keys in committed files or screenshots.

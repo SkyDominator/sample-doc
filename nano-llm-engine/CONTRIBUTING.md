@@ -13,10 +13,25 @@ Run these commands from repository root before opening a PR.
 ```bash
 python scripts/generate_api.py
 MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
-GOOGLE_TRANSLATE_API_KEY=... GOOGLE_TRANSLATE_PROJECT_ID=... python scripts/translate_docs.py
+python scripts/translate_docs.py
 pnpm --prefix docs install
 pnpm --prefix docs build
 ```
+
+## Local secrets
+
+Create `.env.local` in repository root and keep it untracked.
+
+```bash
+cat > .env.local <<'EOF'
+GOOGLE_TRANSLATE_API_KEY=your_api_key_here
+GOOGLE_TRANSLATE_PROJECT_ID=your_project_id_here
+GOOGLE_TRANSLATE_LOCATION=global
+EOF
+chmod 600 .env.local
+```
+
+`translate_docs.py` loads `.env.local` automatically.
 
 ## Translation rules
 
