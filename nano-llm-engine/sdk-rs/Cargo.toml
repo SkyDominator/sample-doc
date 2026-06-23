@@ -1,0 +1,11 @@
+[package]
+name = "nano_llm_rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "nano_llm_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.21", features = ["extension-module"] }

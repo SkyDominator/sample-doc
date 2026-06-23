@@ -1,0 +1,20 @@
+{
+  "name": "nano-llm-docs",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "fumadocs-core": "^14.0.0",
+    "fumadocs-mdx": "^11.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "eslint": "^9.7.0"
+  }
+}

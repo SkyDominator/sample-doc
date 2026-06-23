@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+docs/.next/
+docs/out/
+
+# Rust
+target/
+**/*.rs.bk
+
+# OS / Editor
+.DS_Store
+.vscode/

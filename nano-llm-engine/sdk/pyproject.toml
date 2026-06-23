@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nano-llm-engine"
+version = "1.0.0"
+description = "Mock LLM inference SDK for docs-as-code portfolio"
+readme = "../README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-cov>=5.0.0",
+  "griffe>=1.0.0",
+  "ruff>=0.5.0",
+  "mypy>=1.10.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nano_llm*"]

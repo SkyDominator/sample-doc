@@ -1,0 +1,31 @@
+name: Docs Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  freeze-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Freeze docs snapshot
+        run: |
+          VERSION_DIR="docs/content/docs/[${{ steps.version.outputs.value }}]"
+          mkdir -p "$VERSION_DIR"
+          cp -r docs/content/docs/guides "$VERSION_DIR/" || true
+          cp -r docs/content/docs/api "$VERSION_DIR/" || true
+          cp -r docs/content/docs/tutorials "$VERSION_DIR/" || true
+
+      - name: Build docs
+        run: |
+          corepack enable
+          pnpm --prefix docs install
+          pnpm --prefix docs build
