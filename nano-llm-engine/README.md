@@ -11,11 +11,13 @@ The workflow mirrors fast-moving SDK teams by validating examples in CI, auto-ge
 
 1. Python SDK source changes in `sdk/nano_llm`.
 2. `scripts/generate_api.py` regenerates `docs/content/docs/api/*.mdx` from source docstrings.
-3. `scripts/translate_docs.py` generates `*.en.mdx` from Korean source docs using Google Translation API.
-4. `scripts/validate_snippets.py` executes python snippets in MDX against the mock SDK.
-5. Next.js/Fumadocs build verifies that all docs render correctly.
-6. Lychee checks broken links in built HTML.
-7. Tag-based workflow freezes docs into `docs/content/docs/[vX.Y.Z]/`.
+3. Apply the change of `docs/content/docs/api/*.mdx` in the other docs (guides, migration, trouble shooting, etc.) `docs/content/docs/**/*.mdx` using LLM agent.
+4. `scripts/translate_docs.py` generates `*.en.mdx` from Korean source docs using Google Translation API.
+    1. For testing, you can run `TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py` to copy Korean source docs into English outputs without external API calls.
+5. `scripts/validate_snippets.py` executes python snippets in MDX against the mock SDK.
+6. Next.js/Fumadocs build verifies that all docs render correctly.
+7. Lychee checks broken links in built HTML.
+8. Tag-based workflow freezes docs into `docs/content/docs/[vX.Y.Z]/`.
 
 ## Local setup
 
