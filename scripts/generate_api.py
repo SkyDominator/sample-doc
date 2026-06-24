@@ -59,8 +59,8 @@ def _render_document(language: str) -> str:
     if language == "en":
         frontmatter = (
             "---\n"
-            "title: API Reference: NanoLLMEngine\n"
-            "description: Auto-generated API reference for NanoLLMEngine\n"
+            'title: "API Reference: NanoLLMEngine"\n'
+            'description: "Auto-generated API reference for NanoLLMEngine"\n'
             "---\n\n"
             "# NanoLLMEngine\n\n"
             f"{class_doc}\n\n"
@@ -70,8 +70,8 @@ def _render_document(language: str) -> str:
     else:
         frontmatter = (
             "---\n"
-            "title: API 레퍼런스: NanoLLMEngine\n"
-            "description: NanoLLMEngine 자동 생성 API 문서\n"
+            'title: "API 레퍼런스: NanoLLMEngine"\n'
+            'description: "NanoLLMEngine 자동 생성 API 문서"\n'
             "---\n\n"
             "# NanoLLMEngine\n\n"
             f"{class_doc}\n\n"
