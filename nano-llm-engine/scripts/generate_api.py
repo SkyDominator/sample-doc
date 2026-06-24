@@ -31,7 +31,7 @@ def _format_signature(member: Any) -> str:
 
 
 def _extract_engine_methods() -> tuple[str, list[MethodSpec]]:
-    sdk_root = Path("sdk").resolve()
+    sdk_root = Path("nano-llm-engine/sdk").resolve()
     if str(sdk_root) not in sys.path:
         sys.path.insert(0, str(sdk_root))
 
