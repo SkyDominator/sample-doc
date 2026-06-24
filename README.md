@@ -112,6 +112,13 @@ pytest sdk/tests/ -v
 6. Start localhost preview for the docs site.
 
 ```bash
+pnpm --prefix docs install
+pnpm --prefix docs dev
+```
+
+For the local showcase, use the preview server instead of a production build. The CI workflow remains responsible for `pnpm --prefix docs build`.
+
+```bash
 pnpm --prefix docs dev
 ```
 
@@ -122,14 +129,6 @@ pnpm --prefix docs dev
 
 8. Repeat the regeneration, validation, and preview cycle until the docs and source stay in sync.
 
-### Preview docs site locally
-
-```bash
-pnpm --prefix docs install
-pnpm --prefix docs dev
-```
-
-For the local showcase, use the preview server instead of a production build. The CI workflow remains responsible for `pnpm --prefix docs build`.
 
 ## Project structure
 
