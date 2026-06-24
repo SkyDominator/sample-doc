@@ -31,7 +31,8 @@ def _format_signature(member: Any) -> str:
 
 
 def _extract_engine_methods() -> tuple[str, list[MethodSpec]]:
-    sdk_root = Path("nano-llm-engine/sdk").resolve()
+    script_root = Path(__file__).resolve().parent.parent
+    sdk_root = script_root / "sdk"
     if str(sdk_root) not in sys.path:
         sys.path.insert(0, str(sdk_root))
 
@@ -97,13 +98,14 @@ def _render_document(language: str) -> str:
 def _write_if_changed(path: Path, content: str) -> bool:
     if path.exists() and path.read_text(encoding="utf-8") == content:
         return False
-    path.write_text(content, encoding="utf-8", newline="")
+    path.write_text(content, encoding="utf-8")
     return True
 
 
 def main() -> int:
-    target_ko = Path("docs/content/docs/api/engine.mdx")
-    target_en = Path("docs/content/docs/api/engine.en.mdx")
+    script_root = Path(__file__).resolve().parent.parent
+    target_ko = script_root / "docs/content/docs/api/engine.mdx"
+    target_en = script_root / "docs/content/docs/api/engine.en.mdx"
     target_ko.parent.mkdir(parents=True, exist_ok=True)
 
     updated_ko = _write_if_changed(target_ko, _render_document(language="ko"))
