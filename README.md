@@ -66,6 +66,8 @@ TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 
 Run the local showcase from the repository root. This flow is intended to demonstrate the full docs-as-code cycle without doing a production build.
 
+The docs project includes `docs/pnpm-workspace.yaml` with `allowBuilds` entries for `esbuild` and `sharp`, so `pnpm --prefix docs install` should work without an interactive `pnpm approve-builds` step on pnpm v11.
+
 1. Create and activate a local Python environment.
 
 ```bash
@@ -109,18 +111,13 @@ MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
 pytest sdk/tests/ -v
 ```
 
-6. Start localhost preview for the docs site.
+1. Start localhost preview for the docs site.
 
 ```bash
-pnpm --prefix docs install
 pnpm --prefix docs dev
 ```
 
 For the local showcase, use the preview server instead of a production build. The CI workflow remains responsible for `pnpm --prefix docs build`.
-
-```bash
-pnpm --prefix docs dev
-```
 
 7. Open the preview in your browser.
 
