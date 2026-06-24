@@ -62,12 +62,74 @@ python scripts/translate_docs.py
 TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 ```
 
-### Build docs site
+### Local showcase: end-to-end flow
+
+Run the local showcase from the repository root. This flow is intended to demonstrate the full docs-as-code cycle without doing a production build.
+
+1. Create and activate a local Python environment.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ./sdk pytest griffe requests pyyaml ruff mypy
+pnpm --prefix docs install
+```
+
+1. Make a source or docs change.
+
+    - Example source change: `sdk/nano_llm/engine.py`
+    - Example docs change: `docs/content/docs/guides/*.mdx`
+
+2. Regenerate API reference docs from source.
+
+```bash
+python scripts/generate_api.py
+```
+
+3. Propagate API changes to the other docs pages.
+
+- Update guides, tutorials, migration notes, and troubleshooting pages under `docs/content/docs/**`.
+- This can be done manually or with an LLM-assisted authoring workflow.
+
+4. Generate English docs.
+
+```bash
+# real translation when credentials are configured
+python scripts/translate_docs.py
+
+# portfolio/demo fallback without external API calls
+TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
+```
+
+5. Execute and validate runnable Python snippets.
+
+```bash
+MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
+pytest sdk/tests/ -v
+```
+
+6. Start localhost preview for the docs site.
+
+```bash
+pnpm --prefix docs dev
+```
+
+7. Open the preview in your browser.
+
+- Default URL: `http://localhost:3000`
+- Review the changed guides, API reference pages, and translated English outputs.
+
+8. Repeat the regeneration, validation, and preview cycle until the docs and source stay in sync.
+
+### Preview docs site locally
 
 ```bash
 pnpm --prefix docs install
-pnpm --prefix docs build
+pnpm --prefix docs dev
 ```
+
+For the local showcase, use the preview server instead of a production build. The CI workflow remains responsible for `pnpm --prefix docs build`.
 
 ## Project structure
 
