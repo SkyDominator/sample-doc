@@ -38,12 +38,13 @@ def _exec_snippet(
 
 
 def main() -> int:
-    root = Path("docs/content/docs")
+    script_root = Path(__file__).resolve().parent.parent
+    root = script_root / "docs/content/docs"
     if not root.exists():
         print("validate_snippets.py: docs root not found")
         return 2
 
-    sdk_root = Path("nano-llm-engine/sdk").resolve()
+    sdk_root = script_root / "sdk"
     if str(sdk_root) not in sys.path:
         sys.path.insert(0, str(sdk_root))
 
