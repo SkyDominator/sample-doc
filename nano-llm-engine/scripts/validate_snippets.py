@@ -43,7 +43,7 @@ def main() -> int:
         print("validate_snippets.py: docs root not found")
         return 2
 
-    sdk_root = Path("sdk").resolve()
+    sdk_root = Path("nano-llm-engine/sdk").resolve()
     if str(sdk_root) not in sys.path:
         sys.path.insert(0, str(sdk_root))
 
