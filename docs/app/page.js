@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Braces, FlaskConical, Globe, PlayCircle, Sparkles } from "lucide-react";
 
+import { HtmlLang } from "@/components/html-lang";
 import { LocaleSelect } from "@/components/locale-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,43 +13,54 @@ import {
   CardTitle,
   Cards,
 } from "@/components/ui/card";
-import { DEFAULT_DOC_LOCALE, buildNavigationGroups, getDocsHref } from "@/lib/docs";
+import {
+  DEFAULT_DOC_LOCALE,
+  buildNavigationGroups,
+  getDocsHref,
+  isValidDocLocale,
+} from "@/lib/docs";
 import { source } from "@/lib/source";
 
-const entries = [
-  {
-    eyebrow: "Guides",
-    title: "Concept-first documentation",
-    description:
-      "Quantization, KV cache, batching, and streaming are structured as build paths rather than buried as isolated notes.",
-    href: getDocsHref(DEFAULT_DOC_LOCALE, ["guides", "concepts"]),
-    icon: Globe,
-  },
-  {
-    eyebrow: "Tutorials",
-    title: "Runnable end-to-end walkthrough",
-    description:
-      "The inference pipeline tutorial mirrors a real SDK adoption path: configure, load, generate, inspect, and recover.",
-    href: getDocsHref(DEFAULT_DOC_LOCALE, ["tutorials", "inference-pipeline"]),
-    icon: PlayCircle,
-  },
-  {
-    eyebrow: "API",
-    title: "Generated API reference",
-    description:
-      "Reference pages are derived from source and rendered alongside narrative docs in the same documentation surface.",
-    href: getDocsHref(DEFAULT_DOC_LOCALE, ["api", "engine"]),
-    icon: Braces,
-  },
-];
+export default async function HomePage({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  const currentLocale = isValidDocLocale(resolvedSearchParams?.lang)
+    ? resolvedSearchParams.lang
+    : DEFAULT_DOC_LOCALE;
 
-export default function HomePage() {
-  const changePages = buildNavigationGroups(source.getPages(DEFAULT_DOC_LOCALE)).find(
+  const entries = [
+    {
+      eyebrow: "Guides",
+      title: "Concept-first documentation",
+      description:
+        "Quantization, KV cache, batching, and streaming are structured as build paths rather than buried as isolated notes.",
+      href: getDocsHref(currentLocale, ["guides", "concepts"]),
+      icon: Globe,
+    },
+    {
+      eyebrow: "Tutorials",
+      title: "Runnable end-to-end walkthrough",
+      description:
+        "The inference pipeline tutorial mirrors a real SDK adoption path: configure, load, generate, inspect, and recover.",
+      href: getDocsHref(currentLocale, ["tutorials", "inference-pipeline"]),
+      icon: PlayCircle,
+    },
+    {
+      eyebrow: "API",
+      title: "Generated API reference",
+      description:
+        "Reference pages are derived from source and rendered alongside narrative docs in the same documentation surface.",
+      href: getDocsHref(currentLocale, ["api", "engine"]),
+      icon: Braces,
+    },
+  ];
+
+  const changePages = buildNavigationGroups(source.getPages(currentLocale)).find(
     (group) => group.key === "changes"
   )?.items ?? [];
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.12),transparent_26%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.08),transparent_24%),linear-gradient(180deg,#f8fbfd_0%,#f3f7fb_48%,#f8fafc_100%)]">
+      <HtmlLang lang={currentLocale} />
       <div className="absolute inset-0 bg-hero-grid bg-[size:40px_40px] opacity-40" />
       <div className="relative mx-auto max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <header className="rounded-[2rem] border border-white/70 bg-white/75 px-6 py-5 shadow-soft backdrop-blur sm:px-8">
@@ -64,9 +76,9 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-wrap items-end gap-3">
-              <LocaleSelect currentLocale={DEFAULT_DOC_LOCALE} mode="landing" />
+              <LocaleSelect currentLocale={currentLocale} mode="landing" />
               <Button asChild>
-                <Link href={getDocsHref(DEFAULT_DOC_LOCALE, ["guides", "quickstart"])}>
+                <Link href={getDocsHref(currentLocale, ["guides", "quickstart"])}>
                   Developer quickstart
                 </Link>
               </Button>
@@ -86,13 +98,13 @@ export default function HomePage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link href={getDocsHref(DEFAULT_DOC_LOCALE, ["guides", "quickstart"])}>
+                <Link href={getDocsHref(currentLocale, ["guides", "quickstart"])}>
                   Read the docs
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href={getDocsHref(DEFAULT_DOC_LOCALE, ["api", "engine"])}>Inspect API reference</Link>
+                <Link href={getDocsHref(currentLocale, ["api", "engine"])}>Inspect API reference</Link>
               </Button>
             </div>
           </div>
@@ -188,7 +200,7 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <Button asChild>
-                <Link href={getDocsHref(DEFAULT_DOC_LOCALE, ["tutorials", "inference-pipeline"])}>
+                <Link href={getDocsHref(currentLocale, ["tutorials", "inference-pipeline"])}>
                   Go to tutorial
                 </Link>
               </Button>

@@ -16,6 +16,11 @@ import {
 import { source } from "@/lib/source";
 import { getMDXComponents } from "@/components/mdx";
 
+const DEFAULT_METADATA = {
+  title: "nano-llm-engine",
+  description: "Docs-as-code portfolio for a mock LLM inference SDK.",
+};
+
 function findNeighbors(items, currentUrl) {
   const index = items.findIndex((item) => item.url === currentUrl);
   if (index === -1) return { previous: null, next: null };
@@ -121,6 +126,23 @@ export default async function DocsPage({ params }) {
       </div>
     </main>
   );
+}
+
+export async function generateMetadata({ params }) {
+  const resolved = await params;
+  const locale = isValidDocLocale(resolved.lang) ? resolved.lang : null;
+  if (!locale) return DEFAULT_METADATA;
+
+  const slug = resolved.slug ?? [];
+  if (slug.length === 0) return DEFAULT_METADATA;
+
+  const page = source.getPage(slug, locale);
+  if (!page) return DEFAULT_METADATA;
+
+  return {
+    title: `${page.data.title} | nano-llm-engine`,
+    description: page.data.description ?? DEFAULT_METADATA.description,
+  };
 }
 
 export async function generateStaticParams() {

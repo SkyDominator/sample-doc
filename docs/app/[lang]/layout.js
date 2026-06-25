@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { HtmlLang } from "@/components/html-lang";
 import { isValidDocLocale } from "@/lib/docs";
 
 export default async function LocaleLayout({ children, params }) {
@@ -9,7 +10,12 @@ export default async function LocaleLayout({ children, params }) {
     notFound();
   }
 
-  return children;
+  return (
+    <>
+      <HtmlLang lang={resolved.lang} />
+      {children}
+    </>
+  );
 }
 
 export function generateStaticParams() {

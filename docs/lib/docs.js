@@ -69,6 +69,14 @@ export function getDocsHref(locale, slugs = []) {
     : `/${normalizedLocale}/docs`;
 }
 
+export function getLandingHref(locale) {
+  const normalizedLocale = isValidDocLocale(locale) ? locale : DEFAULT_DOC_LOCALE;
+
+  return normalizedLocale === DEFAULT_DOC_LOCALE
+    ? "/"
+    : `/?lang=${normalizedLocale}`;
+}
+
 export function getSectionMeta(section) {
   return SECTION_META[section] ?? SECTION_META.overview;
 }

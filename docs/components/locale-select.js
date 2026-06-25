@@ -6,6 +6,7 @@ import {
   DOCS_HOME_SLUGS,
   DOC_LOCALES,
   getDocsHref,
+  getLandingHref,
   getLocaleMeta,
   swapLocaleInPathname,
 } from "@/lib/docs";
@@ -30,7 +31,7 @@ export function LocaleSelect({
           const nextLocale = event.target.value;
           const href =
             mode === "landing"
-              ? getDocsHref(nextLocale, DOCS_HOME_SLUGS)
+              ? getLandingHref(nextLocale)
               : swapLocaleInPathname(pathname, nextLocale);
 
           router.push(href);
