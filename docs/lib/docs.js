@@ -20,6 +20,10 @@ const SECTION_META = {
     label: "Tutorials",
     description: "Hands-on build paths and runnable flows.",
   },
+  changes: {
+    label: "Changes",
+    description: "Release-style notes for docs surface updates.",
+  },
   migration: {
     label: "Migration",
     description: "Version upgrades, diffs, and rollout notes.",
@@ -38,6 +42,7 @@ const SECTION_ORDER = [
   "guides",
   "api",
   "tutorials",
+  "changes",
   "migration",
   "troubleshooting",
   "overview",

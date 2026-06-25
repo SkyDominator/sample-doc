@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Braces, FlaskConical, Globe, PlayCircle, Sparkles } from "lucide-react";
 
+import { LocaleSelect } from "@/components/locale-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +12,8 @@ import {
   CardTitle,
   Cards,
 } from "@/components/ui/card";
-import { DEFAULT_DOC_LOCALE, getDocsHref } from "@/lib/docs";
+import { DEFAULT_DOC_LOCALE, buildNavigationGroups, getDocsHref } from "@/lib/docs";
+import { source } from "@/lib/source";
 
 const entries = [
   {
@@ -41,6 +43,10 @@ const entries = [
 ];
 
 export default function HomePage() {
+  const changePages = buildNavigationGroups(source.getPages(DEFAULT_DOC_LOCALE)).find(
+    (group) => group.key === "changes"
+  )?.items ?? [];
+
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(15,118,110,0.12),transparent_26%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.08),transparent_24%),linear-gradient(180deg,#f8fbfd_0%,#f3f7fb_48%,#f8fafc_100%)]">
       <div className="absolute inset-0 bg-hero-grid bg-[size:40px_40px] opacity-40" />
@@ -57,10 +63,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <Button asChild variant="outline">
-                <Link href={getDocsHref("en", ["guides", "quickstart"])}>English docs</Link>
-              </Button>
+            <div className="flex flex-wrap items-end gap-3">
+              <LocaleSelect currentLocale={DEFAULT_DOC_LOCALE} mode="landing" />
               <Button asChild>
                 <Link href={getDocsHref(DEFAULT_DOC_LOCALE, ["guides", "quickstart"])}>
                   Developer quickstart
@@ -155,30 +159,20 @@ export default function HomePage() {
           <Card>
             <CardHeader>
               <Badge variant="outline">Surface changes</Badge>
-              <CardTitle>Modeled after an API guide, not a blog theme</CardTitle>
+              <CardTitle>Recent documentation changes</CardTitle>
               <CardDescription>
-                The redesign prioritizes dense navigation, strong information hierarchy, and fast jumps between narrative guides and reference content.
+                Release-note style updates rendered from the `changes` docs folder.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-[1.5rem] bg-slate-50 p-5">
-                <p className="text-sm font-semibold text-slate-950">Grouped sidebar</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Sections are split into Guides, API, Tutorials, Migration, and Troubleshooting.
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] bg-slate-50 p-5">
-                <p className="text-sm font-semibold text-slate-950">Locale-aware URLs</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Korean and English pages now live in explicit locale routes and can be switched in-place.
-                </p>
-              </div>
-              <div className="rounded-[1.5rem] bg-slate-50 p-5">
-                <p className="text-sm font-semibold text-slate-950">Command palette</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Search is available from the docs shell with grouped results and keyboard access.
-                </p>
-              </div>
+              {changePages.map((item) => (
+                <Link href={item.url} key={item.url}>
+                  <div className="rounded-[1.5rem] bg-slate-50 p-5 transition-colors hover:bg-slate-100">
+                    <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                  </div>
+                </Link>
+              ))}
             </CardContent>
           </Card>
 

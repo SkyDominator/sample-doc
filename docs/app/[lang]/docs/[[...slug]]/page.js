@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
@@ -51,53 +51,22 @@ export default async function DocsPage({ params }) {
     <main className="px-4 py-6 sm:px-6 lg:px-8 lg:py-8 xl:px-12">
       <div className="mx-auto grid max-w-[1240px] gap-8 xl:grid-cols-[minmax(0,1fr)_280px] xl:gap-10">
         <article className="min-w-0">
-          <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-panel backdrop-blur sm:p-8 xl:p-10">
-            <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(90deg,rgba(15,118,110,0.12),rgba(14,165,233,0.06),transparent)]" />
+          <div className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-panel backdrop-blur sm:p-8 xl:p-10">
+            <Badge>{section.label}</Badge>
 
-            <div className="relative">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge>{section.label}</Badge>
-                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-medium text-slate-500 shadow-soft">
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  API guide surface
-                </span>
-              </div>
+            <h1 className="mt-5 max-w-4xl text-balance text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+              {page.data.title}
+            </h1>
 
-              <h1 className="mt-6 max-w-4xl text-balance text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                {page.data.title}
-              </h1>
-
-              {page.data.description ? (
-                <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-                  {page.data.description}
-                </p>
-              ) : null}
-
-              <div className="mt-8 grid gap-4 border-t border-slate-200/80 pt-6 sm:grid-cols-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Section
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-slate-900">{section.label}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Locale
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-slate-900">{locale.toUpperCase()}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Path
-                  </p>
-                  <p className="mt-2 truncate text-sm font-medium text-slate-900">/{slug.join("/")}</p>
-                </div>
-              </div>
-            </div>
+            {page.data.description ? (
+              <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
+                {page.data.description}
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-8 rounded-[2rem] border border-slate-200/80 bg-white/90 px-6 py-8 shadow-soft backdrop-blur sm:px-8 xl:px-10">
-            <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:tracking-tight prose-h2:mt-12 prose-h2:text-2xl prose-h3:mt-8 prose-h3:text-xl prose-p:text-[15px] prose-p:leading-7 prose-li:text-[15px] prose-li:leading-7 prose-a:text-primary prose-a:no-underline hover:prose-a:text-primary/80 prose-pre:overflow-x-auto prose-pre:rounded-[1.5rem] prose-pre:border prose-pre:border-slate-200 prose-pre:bg-slate-950 prose-pre:px-5 prose-pre:py-4 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-blockquote:rounded-r-2xl prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-5 prose-blockquote:py-1 prose-table:overflow-hidden prose-table:rounded-2xl prose-table:border prose-table:border-slate-200 prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3">
+            <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:tracking-tight prose-h1:mb-5 prose-h1:text-4xl prose-h2:mt-12 prose-h2:text-2xl prose-h3:mt-8 prose-h3:text-xl prose-p:text-[15px] prose-p:leading-7 prose-li:text-[15px] prose-li:leading-7 prose-a:text-primary prose-a:no-underline hover:prose-a:text-primary/80 prose-pre:m-0 prose-pre:bg-transparent prose-pre:p-0 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-pre:prose-code:bg-transparent prose-pre:prose-code:p-0 prose-blockquote:rounded-r-2xl prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-5 prose-blockquote:py-1 prose-table:overflow-hidden prose-table:rounded-2xl prose-table:border prose-table:border-slate-200 prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3">
               <MDX components={getMDXComponents()} />
             </div>
           </div>
