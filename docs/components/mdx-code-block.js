@@ -64,6 +64,27 @@ function formatLanguage(language) {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
+function applyShikiTokenColors(node) {
+  if (!isValidElement(node)) {
+    return node;
+  }
+
+  const nextChildren = Children.map(node.props.children, applyShikiTokenColors);
+  const nextProps = { children: nextChildren };
+
+  if (node.props.style) {
+    const nextStyle = { ...node.props.style };
+
+    if (nextStyle["--shiki-dark"] || nextStyle["--shiki-light"]) {
+      nextStyle.color = "var(--shiki-dark)";
+    }
+
+    nextProps.style = nextStyle;
+  }
+
+  return cloneElement(node, nextProps);
+}
+
 export function DocsCodeBlock({ children, className, ...props }) {
   const [copied, setCopied] = useState(false);
   const text = useMemo(() => extractText(children).replace(/\n$/, ""), [children]);
@@ -76,7 +97,7 @@ export function DocsCodeBlock({ children, className, ...props }) {
     const child = Children.only(children);
 
     if (isValidElement(child)) {
-      return cloneElement(child, {
+      return cloneElement(applyShikiTokenColors(child), {
         className: cn(
           "block min-w-full bg-transparent p-0 font-mono text-[13px] leading-6 text-slate-100",
           child.props.className

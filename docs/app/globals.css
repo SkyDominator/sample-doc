@@ -50,6 +50,24 @@
   ::selection {
     @apply bg-accent text-accent-foreground;
   }
+
+  figure.shiki {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+  }
+
+  figure.shiki code {
+    color: var(--shiki-dark);
+  }
+
+  figure.shiki code span {
+    color: var(--shiki-dark);
+  }
+
+  figure.shiki .line {
+    display: block;
+    min-height: 1.5rem;
+  }
 }
 
 @layer utilities {
