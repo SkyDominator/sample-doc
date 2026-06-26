@@ -40,11 +40,11 @@ const SECTION_META = {
 
 const SECTION_ORDER = [
   "guides",
-  "api",
-  "tutorials",
   "changes",
-  "migration",
+  "tutorials",
   "troubleshooting",
+  "migration",
+  "api",
   "overview",
 ];
 
