@@ -10,7 +10,7 @@ The workflow mirrors fast-moving SDK teams by validating examples in CI, auto-ge
 ## Pipeline architecture
 
 1. Python SDK source changes in `sdk/nano_llm`.
-2. `scripts/generate_api.py` regenerates `docs/content/docs/api/*.mdx` from source docstrings.
+2. `scripts/generate_api.py` regenerates `docs/content/docs/api/*.mdx` by parsing SDK modules, public API signatures, docstrings, exported types, raised exceptions, and reusable python snippets from the docs corpus.
 3. Apply the change of `docs/content/docs/api/*.mdx` in the other docs (guides, migration, trouble shooting, etc.) `docs/content/docs/**/*.mdx` using LLM agent.
 4. `scripts/translate_docs.py` generates `*.en.mdx` from Korean source docs using Google Translation API.
     1. For testing, you can run `TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py` to copy Korean source docs into English outputs without external API calls.
@@ -36,6 +36,98 @@ pytest sdk/tests/ -v
 ```
 
 ### Run docs automation scripts
+
+#### Generate API reference docs
+
+Run the generator from the repository root.
+
+```bash
+python scripts/generate_api.py
+```
+
+The output format is:
+
+```text
+generate_api.py: ko:engine=False en:engine=False
+```
+
+- `True`: the generator rewrote that output file.
+- `False`: the generated output already matched the current file, so nothing changed.
+
+#### How target discovery works
+
+By default, the generator resolves targets in this order:
+
+1. Explicit `--target` arguments.
+2. Existing files under `docs/content/docs/api/*.mdx`.
+3. Automatic discovery of public APIs under `sdk/<package>`.
+
+If an API page already exists, the script treats it as the generation target. When no explicit target metadata is present, it infers the Python module from the file slug.
+
+#### Common commands
+
+Generate all discovered API pages:
+
+```bash
+python scripts/generate_api.py
+```
+
+Generate only English output:
+
+```bash
+python scripts/generate_api.py --languages en
+```
+
+Generate an explicit module target:
+
+```bash
+python scripts/generate_api.py --target nano_llm.engine=engine
+```
+
+Generate an explicit symbol target inside a module:
+
+```bash
+python scripts/generate_api.py --target nano_llm.engine:NanoLLMEngine=engine
+```
+
+Point the generator at another package root:
+
+```bash
+python scripts/generate_api.py \
+    --package nano_llm \
+    --sdk-root sdk \
+    --docs-root docs/content/docs
+```
+
+#### Disambiguation for edge cases
+
+Real-world SDK modules often expose more than one plausible public API surface. When the generator cannot safely infer which class, function, or attribute a page should document, add an `api-target` field to the API page frontmatter.
+
+```md
+---
+title: "API Reference: NanoLLMEngine"
+description: "Auto-generated API reference for NanoLLMEngine"
+api-target: nano_llm.engine:NanoLLMEngine
+---
+```
+
+Use `api-target` when:
+
+- one module exposes multiple public classes or functions
+- the docs slug does not match the source symbol name
+- you want one file to lock to one exact symbol regardless of future module changes
+
+#### Edge case handling built into the generator
+
+The generator already handles:
+
+- class, function, and public attribute/type-alias pages with different render paths
+- ambiguous modules by failing fast and asking for `api-target`
+- imported aliases that do not resolve cleanly outside the package
+- cross-module related type resolution
+- exception extraction from docstrings
+- example extraction from existing non-API docs
+- locale-specific output files (`*.mdx`, `*.en.mdx`)
 
 Store translation secrets in a gitignored local file before running the translation step.
 
