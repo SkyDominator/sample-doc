@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CornerDownLeft, Search } from "lucide-react";
+import { CornerDownLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,25 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+
+function SearchIcon({ className }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      focusable="false"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.34-4.34" />
+    </svg>
+  );
+}
 
 export function DocsCommandMenu({ items, className, compact = false }) {
   const router = useRouter();
@@ -60,7 +79,7 @@ export function DocsCommandMenu({ items, className, compact = false }) {
         variant="outline"
       >
         <span className="flex items-center gap-2">
-          <Search className="h-4 w-4" />
+          <SearchIcon className="h-4 w-4" />
           {compact ? null : <span>Search docs</span>}
         </span>
         {compact ? null : <span className="text-xs font-medium text-slate-400">⌘K</span>}
@@ -91,7 +110,7 @@ export function DocsCommandMenu({ items, className, compact = false }) {
                         ) : null}
                       </div>
                       <CommandShortcut className="flex items-center gap-1">
-                        <CornerDownLeft className="h-3.5 w-3.5" />
+                        <CornerDownLeft aria-hidden="true" className="h-3.5 w-3.5" />
                       </CommandShortcut>
                     </CommandItem>
                   ))}

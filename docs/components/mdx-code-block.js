@@ -85,6 +85,16 @@ function applyShikiTokenColors(node) {
   return cloneElement(node, nextProps);
 }
 
+function normalizeCodeChildren(children) {
+  return Children.toArray(children).filter((child) => {
+    if (child == null || typeof child === "boolean") {
+      return false;
+    }
+
+    return !(typeof child === "string" && child.trim() === "");
+  });
+}
+
 export function DocsCodeBlock({ children, className, ...props }) {
   const [copied, setCopied] = useState(false);
   const text = useMemo(() => extractText(children).replace(/\n$/, ""), [children]);
@@ -94,7 +104,8 @@ export function DocsCodeBlock({ children, className, ...props }) {
   );
 
   const renderedChildren = useMemo(() => {
-    const child = Children.only(children);
+    const normalizedChildren = normalizeCodeChildren(children);
+    const child = normalizedChildren.length === 1 ? normalizedChildren[0] : normalizedChildren;
 
     if (isValidElement(child)) {
       return cloneElement(applyShikiTokenColors(child), {
@@ -107,7 +118,7 @@ export function DocsCodeBlock({ children, className, ...props }) {
 
     return (
       <code className="block min-w-full bg-transparent p-0 font-mono text-[13px] leading-6 text-slate-100">
-        {children}
+        {Array.isArray(child) ? child.map((item) => applyShikiTokenColors(item)) : child}
       </code>
     );
   }, [children]);

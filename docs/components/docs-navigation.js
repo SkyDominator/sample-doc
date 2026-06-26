@@ -70,7 +70,10 @@ function SidebarPanel({
                       {group.label}
                     </span>
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-300 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 shrink-0 text-slate-300 transition-transform duration-200 group-data-[state=open]:rotate-180"
+                  />
                 </button>
               </Collapsible.Trigger>
 
@@ -107,6 +110,7 @@ function SidebarPanel({
 
 export function DocsNavigation({ currentLocale, groups, searchItems }) {
   const pathname = usePathname() ?? getDocsHref(currentLocale);
+  const [hasMounted, setHasMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState(() =>
     Object.fromEntries(
@@ -133,47 +137,53 @@ export function DocsNavigation({ currentLocale, groups, searchItems }) {
     });
   }, [groups, pathname]);
 
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   return (
     <>
-      <div className="sticky top-0 z-40 border-b border-slate-200/70 bg-background/80 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link className="flex items-center gap-3" href={getLandingHref(currentLocale)}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/10">
-              <span className="text-sm font-semibold tracking-[0.18em]">NL</span>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-950">nano-llm-engine</p>
-              <p className="text-xs text-slate-500">Docs</p>
-            </div>
-          </Link>
+      {hasMounted ? (
+        <div className="sticky top-0 z-40 border-b border-slate-200/70 bg-background/80 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+            <Link className="flex items-center gap-3" href={getLandingHref(currentLocale)}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/10">
+                <span className="text-sm font-semibold tracking-[0.18em]">NL</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-950">nano-llm-engine</p>
+                <p className="text-xs text-slate-500">Docs</p>
+              </div>
+            </Link>
 
-          <div className="flex items-center gap-2">
-            <DocsCommandMenu compact items={searchItems} />
-            <Dialog.Root onOpenChange={setMobileOpen} open={mobileOpen}>
-              <Dialog.Trigger asChild>
-                <Button size="icon" variant="outline">
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </Dialog.Trigger>
-              <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-sm" />
-                <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-[min(88vw,380px)] border-r border-slate-200 bg-background p-4 shadow-2xl">
-                  <Dialog.Title className="sr-only">Documentation navigation</Dialog.Title>
-                  <SidebarPanel
-                    currentLocale={currentLocale}
-                    groups={groups}
-                    onNavigate={() => setMobileOpen(false)}
-                    openGroups={openGroups}
-                    pathname={pathname}
-                    searchItems={searchItems}
-                    setOpenGroups={setOpenGroups}
-                  />
-                </Dialog.Content>
-              </Dialog.Portal>
-            </Dialog.Root>
+            <div className="flex items-center gap-2">
+              <DocsCommandMenu compact items={searchItems} />
+              <Dialog.Root onOpenChange={setMobileOpen} open={mobileOpen}>
+                <Dialog.Trigger asChild>
+                  <Button size="icon" variant="outline">
+                    <Menu aria-hidden="true" className="h-4 w-4" />
+                  </Button>
+                </Dialog.Trigger>
+                <Dialog.Portal>
+                  <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-sm" />
+                  <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-[min(88vw,380px)] border-r border-slate-200 bg-background p-4 shadow-2xl">
+                    <Dialog.Title className="sr-only">Documentation navigation</Dialog.Title>
+                    <SidebarPanel
+                      currentLocale={currentLocale}
+                      groups={groups}
+                      onNavigate={() => setMobileOpen(false)}
+                      openGroups={openGroups}
+                      pathname={pathname}
+                      searchItems={searchItems}
+                      setOpenGroups={setOpenGroups}
+                    />
+                  </Dialog.Content>
+                </Dialog.Portal>
+              </Dialog.Root>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <aside className="hidden lg:block lg:w-[320px] lg:shrink-0 xl:w-[340px]">
         <div className="sticky top-0 h-screen border-r border-slate-200 bg-white">
