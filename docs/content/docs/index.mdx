@@ -1,14 +1,29 @@
 ---
-title: nano-llm-engine docs
-description: Documentation home for nano-llm-engine
+title: nano-llm-engine
+description: nano-llm-engine 코드베이스 개요
 ---
 
-# nano-llm-engine Documentation
+# nano-llm-engine
 
-This site demonstrates docs-as-code for a mock LLM inference SDK.
+`nano-llm-engine`는 모의 LLM 추론 경로를 작은 코드베이스로 정리한 예제 프로젝트입니다.
+핵심 구성은 Python SDK의 엔진 수명주기, 요청 설정 객체, 장치 메모리 추상화, 그리고 이 동작을 확인하는 테스트입니다.
 
-## What's new
+## 핵심 구성 요소
 
-- [Sidebar simplification](/ko/docs/changes/sidebar-and-shell)
-- [Code block refresh](/ko/docs/changes/code-block-refresh)
-- [Locale entrypoints](/ko/docs/changes/locale-entrypoints)
+- `NanoLLMEngine`: 장치 로드, 동기 생성, 스트리밍 생성, 메모리 조회, 언로드를 담당합니다.
+- `InferenceConfig`: 배치 크기, 토큰 예산, temperature 같은 요청 단위 설정을 보관합니다.
+- `KVCacheConfig`: KV cache 길이와 정밀도 라벨을 엔진 수준 설정으로 유지합니다.
+- `DeviceMemory`: Rust 확장이 있으면 이를 사용하고, 없으면 Python 구현으로 동작하는 메모리 풀 래퍼입니다.
+
+## 시작 경로
+
+- [빠른 시작](/ko/docs/guides/quickstart)
+- [핵심 개념](/ko/docs/guides/concepts)
+- [API 레퍼런스](/ko/docs/api/engine)
+- [추론 파이프라인](/ko/docs/tutorials/inference-pipeline)
+
+## 현재 코드 포인트
+
+- [엔진 세션 수명주기](/ko/docs/changes/sidebar-and-shell)
+- [생성 출력 형식](/ko/docs/changes/code-block-refresh)
+- [설정 진입점 분리](/ko/docs/changes/locale-entrypoints)

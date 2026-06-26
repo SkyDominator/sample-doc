@@ -5,8 +5,7 @@ description: 엔드투엔드 추론 파이프라인 예제
 
 # 추론 파이프라인
 
-이 튜토리얼은 실제 서비스 문서처럼 "설정 -> 로드 -> 생성 -> 스트리밍 -> 메모리 점검 -> 오류 처리 -> 종료" 순서로 구성되어 있습니다.
-모든 코드는 CI에서 실행 가능한 형태를 유지합니다.
+이 튜토리얼은 `NanoLLMEngine` 인스턴스를 초기화한 뒤, 생성 요청과 스트리밍 요청을 실행하고, 메모리 상태와 오류 경로를 점검한 뒤 세션을 종료하는 흐름을 따라갑니다.
 
 ## 1) 런타임 초기화
 
@@ -31,11 +30,11 @@ engine.load_to_device(device_id=0)
 from nano_llm import InferenceConfig
 
 cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("SDK 문서 자동 검증의 장점 세 가지를 알려줘", cfg)
+out = engine.generate("INT8 설정이 결과 문자열에 어떻게 표시되는지 설명해줘", cfg)
 print(out)
 ```
 
-`generate()` 반환 문자열 앞에는 양자화 라벨과 토큰 예산 메타데이터가 함께 붙어, 문서 예제만 봐도 어떤 설정으로 생성되었는지 바로 확인할 수 있습니다.
+`generate()`는 `[mock:{quantization}:tokens={max_tokens}]` 접두사를 붙여 현재 엔진/요청 설정 중 일부를 결과 문자열에서 바로 확인하게 합니다.
 
 ## 3) 스트리밍 요청
 
@@ -49,7 +48,7 @@ for token in engine.generate_streaming(
     print(token)
 ```
 
-`generate_streaming()`은 동기 생성 결과를 공백 기준 토큰 단위로 나눠 전달하므로, 문서에서는 최종 문자열과 스트리밍 조각이 같은 설정에서 나온다는 점을 함께 설명하는 것이 좋습니다.
+`generate_streaming()`은 내부에서 `generate()` 결과를 재사용하므로, 토큰을 다시 이어 붙이면 동기 호출과 같은 payload를 얻습니다.
 
 ## 4) 메모리 텔레메트리 확인
 
@@ -58,7 +57,7 @@ stats = engine.get_device_memory()
 print(stats["total_mb"], stats["used_mb"])
 ```
 
-`get_device_memory()`는 엔진이 현재 점유 중인 mock 메모리 상태를 읽습니다. 배치 조정이나 KV cache 길이 조정 전에 현재 사용량을 먼저 확인하는 흐름을 권장합니다.
+`get_device_memory()`는 엔진이 현재 점유 중인 mock 메모리 상태를 읽습니다. 로드 전에는 `used_mb`가 `0`, 로드 후에는 `1024`입니다.
 
 ## 5) 장치 메모리 풀 예약 확인
 
@@ -73,7 +72,7 @@ memory.free(16 * 1024 * 1024)
 print(f"{memory.utilization():.2f}")
 ```
 
-이 단계는 엔진 텔레메트리 조회와 별개로, 새 요청을 투입하기 전에 메모리 예산을 사전 점검하는 패턴을 보여줍니다.
+이 단계는 엔진 텔레메트리와 별개로, 독립적인 메모리 풀에서 예약 가능 여부를 확인하는 패턴을 보여줍니다.
 
 ## 6) 오류 처리 패턴
 
@@ -89,7 +88,7 @@ probe = NanoLLMEngine(model_path="models/mock-llm.bin")
 try:
     probe.load_to_device(0)
 except DeviceNotFoundError as exc:
-    print(f"recoverable error: {exc}")
+    print(f"예상 가능한 오류: {exc}")
 ```
 
 ## 7) 종료
@@ -100,7 +99,7 @@ engine.unload()
 
 ## 운영 체크리스트
 
-1. 샘플 코드가 실제로 실행되는가?
-2. 실패 시 메시지가 문서 설명과 일치하는가?
-3. 릴리즈 시점 API 시그니처가 자동 문서에 반영되는가?
-4. 번역본이 코드/MDX 문법을 보존하는가?
+1. `MOCK_RNGD_HARDWARE` 없이 `load_to_device()`를 호출하면 `DeviceNotFoundError`가 발생하는가?
+2. 로드 후 `generate()` 결과에 현재 `quantization`과 `max_tokens` 값이 반영되는가?
+3. `generate_streaming()` 토큰을 다시 합치면 동기 결과와 같은 문자열이 되는가?
+4. `unload()` 후 `is_loaded`가 `False`이고 `get_device_memory()["used_mb"]`가 `0`인가?

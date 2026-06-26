@@ -5,63 +5,57 @@ description: 양자화, KV cache, 배치 추론 개념
 
 # 핵심 개념
 
-`nano-llm-engine`는 실제 하드웨어 스택을 단순화한 모의 SDK이지만, 문서 구조와 검증 전략은 실제 추론 런타임 문서화 방식과 동일하게 설계되었습니다.
-이 문서는 API 호출 자체보다, 왜 이런 옵션이 존재하는지와 운영 관점에서 어떤 의미가 있는지에 초점을 둡니다.
+`nano-llm-engine`는 RNGD 장치 연동을 모의한 추론 런타임 예제입니다.
+실제 모델 계산을 수행하지는 않지만, 엔진 수명주기와 요청 설정, 메모리 추상화처럼 런타임을 둘러싼 제어면을 작게 재현합니다.
 
 ## 양자화(Quantization)
 
-양자화는 모델 가중치와 연산 정밀도를 낮춰 메모리 사용량과 지연 시간을 줄이는 전략입니다.
+`quantization`은 엔진 인스턴스에 저장되는 리터럴 값이며 현재 mock 출력의 접두사에도 그대로 반영됩니다.
 
-- `FP32`: 가장 높은 정밀도, 가장 큰 메모리 비용
-- `FP16`: 일반적으로 정확도-성능 균형이 좋음
-- `INT8`: 추론 가속과 메모리 절약 효과가 큼
-- `INT4`: 메모리 효율은 매우 좋지만 품질 저하 가능성이 큼
+- `FP32`: 가장 높은 정밀도 표기
+- `FP16`: 기본값
+- `INT8`: 메모리 절감형 설정을 가리키는 표기
+- `INT4`: 더 공격적인 압축을 가리키는 표기
 
-문서 관점에서는 "어떤 정밀도가 빠르다"보다 "품질과 처리량의 트레이드오프를 어떤 기준으로 선택하는가"를 명확히 안내해야 합니다.
+이 코드베이스에서 양자화 값은 실제 수치 계산을 바꾸지 않지만, 어떤 설정으로 요청을 생성했는지 결과 문자열만으로 추적하게 해줍니다.
 
 ## KV Cache 메모리 모델
 
-LLM 추론에서 KV cache는 이전 토큰의 attention key/value 상태를 저장해 재계산을 줄입니다.
-`KVCacheConfig.max_seq_len`이 커질수록 긴 문맥을 처리하기 유리하지만 메모리 점유가 커집니다.
-`KVCacheConfig.cache_dtype`는 cache를 어떤 정밀도로 저장할지 나타내며, 같은 길이의 문맥이라도 정밀도 선택에 따라 메모리 예산과 디버깅 가시성이 달라집니다.
+LLM 추론에서 KV cache는 이전 토큰의 attention key/value 상태를 보존해 재계산을 줄이는 버퍼입니다.
+`KVCacheConfig`는 이 버퍼에 대한 가정을 엔진에 보관합니다.
 
-실무 문서에서는 다음과 같은 의사결정 지점을 분리해 설명하는 것이 좋습니다.
+- `max_seq_len`: cache가 감당할 최대 시퀀스 길이
+- `cache_dtype`: cache 저장 정밀도 라벨
 
-- 긴 컨텍스트 정확도 우선: `max_seq_len` 증가
-- 동시 요청 처리량 우선: `max_seq_len` 축소 + 배치 튜닝
-- 메모리 한계 환경: 낮은 정밀도 + 보수적 캐시 크기
+현재 mock 엔진은 `KVCacheConfig`를 메모리 계산에 직접 반영하지 않지만, 엔진 인스턴스가 어떤 캐시 정책으로 생성되었는지 명시적으로 유지합니다.
 
 ## 배치 추론(Batched Inference)
-
-`InferenceConfig.batch_size`는 동일 시간 구간에 묶어 처리하는 요청 수를 의미합니다.
-배치가 커질수록 디바이스 활용률은 증가하지만 개별 요청 지연(latency)은 증가할 수 있습니다.
 
 `InferenceConfig`는 요청 단위 제어면을 함께 제공합니다.
 
 - `batch_size`: 한 번에 묶어 처리할 프롬프트 수
-- `max_tokens`: 생성 결과에 반영할 토큰 예산
-- `temperature`: 샘플링 다양성을 표현하는 placeholder 값
+- `max_tokens`: 출력 접두사에 반영되는 토큰 예산
+- `temperature`: 샘플링 다양성을 나타내는 자리표시 값
 
-문서 작성 시 권장되는 표현:
-
-1. 실시간 API: 낮은 배치, 낮은 지연
-2. 오프라인 처리: 높은 배치, 높은 처리량
-3. 혼합 워크로드: 시간대별 배치 정책 분리
+이 구현에서 `generate()`는 `max_tokens`만 문자열에 노출하지만, `batch_size`와 `temperature`도 실제 런타임과 유사한 호출 형태를 유지하기 위해 함께 전달됩니다.
 
 ## 장치 메모리 추상화
 
-`NanoLLMEngine.get_device_memory()`가 현재 엔진 세션의 텔레메트리를 읽는 API라면, `DeviceMemory`는 별도의 메모리 풀을 가정하고 예약 가능 여부를 점검하는 보조 추상화입니다.
+`NanoLLMEngine.get_device_memory()`는 엔진이 로드되었는지에 따라 간단한 텔레메트리를 반환합니다.
+로드 전에는 `used_mb=0`, 로드 후에는 `used_mb=1024`가 됩니다.
+
+별도의 `DeviceMemory` 래퍼는 독립적인 메모리 풀을 가정합니다.
 
 - `allocate(bytes_size)`: 예약에 성공하면 `True`, 용량이 부족하면 `False`
 - `free(bytes_size)`: 기존 예약량보다 더 많이 해제하려고 하면 `RuntimeError`
 - `utilization()`: 현재 사용률을 `0.0`~`1.0` 범위로 반환
 
-실무 문서에서는 "현재 사용량 조회"와 "새 작업 투입 전 예약 가능 여부 확인"을 서로 다른 단계로 설명해야, 캐시 설정과 배치 전략을 메모리 예산과 연결해 전달할 수 있습니다.
+Rust 확장 모듈 `nano_llm_rs`가 있으면 그 구현을 사용하고, 없으면 Python 구현으로 자동 폴백합니다.
 
 ## 토큰 생성과 스트리밍
 
-토큰 생성은 매 스텝마다 다음 토큰 분포를 계산하는 반복 과정입니다.
-스트리밍 출력은 최종 문자열 완성 전에도 중간 결과를 사용자에게 전달해 체감 응답성을 높입니다.
+`generate()`는 `[mock:{quantization}:tokens={max_tokens}]` 접두사를 포함한 문자열을 만듭니다.
+`generate_streaming()`은 같은 결과를 공백 단위로 잘라 순서대로 내보냅니다.
 
 ```python
 import os
@@ -73,19 +67,18 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device()
 
 for token in engine.generate_streaming(
-    "토큰 스트리밍의 장점을 세 가지로 요약해줘",
+    "INT8 설정에서 토큰 예산이 출력 형식에 어떻게 반영되는지 설명해줘",
     InferenceConfig(max_tokens=40, temperature=0.1),
 ):
     print(token)
 ```
 
-## 문서 검증과 드리프트 방지
+## 테스트된 동작 범위
 
-이 프로젝트는 코드 샘플을 CI에서 직접 실행해 문서와 코드 간 괴리를 조기에 감지합니다.
-이 방식은 특히 빠른 릴리즈 주기에서 중요합니다.
+`sdk/tests/test_engine.py`는 현재 mock 런타임의 핵심 계약을 검증합니다.
 
-- API 시그니처 변경 -> `generate_api.py` 재생성 결과로 즉시 노출
-- 샘플 코드 파손 -> `validate_snippets.py`에서 빌드 실패
-- 용어/표현 불일치 -> 번역 파이프라인에서 glossary 보호
-
-핵심은 문서를 산출물이 아니라 테스트 가능한 제품으로 다루는 것입니다.
+- 환경 변수가 없으면 `load_to_device()`가 `DeviceNotFoundError`를 발생시킴
+- 로드 전 `generate()` 호출이 `GenerationError`를 발생시킴
+- 스트리밍 출력이 동기 생성 결과를 토큰 단위로 전달함
+- 엔진 로드 상태에 따라 메모리 텔레메트리가 바뀜
+- `DeviceMemory`가 할당, 해제, 사용률 계산을 일관되게 수행함

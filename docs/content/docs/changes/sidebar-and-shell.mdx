@@ -1,12 +1,40 @@
 ---
-title: Sidebar simplification
-description: Reduced the left navigation to a plain text list with lighter section headers.
+title: 세션 상태와 메모리 텔레메트리
+description: 엔진 로드/언로드 상태 전환과 메모리 조회 계약이 이번 버전에서 정리되었습니다.
 ---
 
-# Sidebar simplification
+# 세션 상태와 메모리 텔레메트리
 
-The docs shell now uses a much lighter left navigation treatment.
+이번 업데이트에서는 `NanoLLMEngine`의 세션 수명주기를 더 예측 가능하게 다루도록 상태 전환 규약을 정리했습니다.
 
-- Section headers stay collapsible.
-- Page links render as plain text rows instead of card-like blocks.
-- Locale switching stays available without adding extra visual weight.
+## 변경 사항
+
+- `load_to_device()`가 성공하면 `is_loaded`가 즉시 `True`로 바뀝니다.
+- `unload()`는 현재 로드 여부와 관계없이 상태를 정리하고 `True`를 반환합니다.
+- `get_device_memory()`는 항상 `total_mb`와 `used_mb` 키를 가진 동일한 구조를 반환합니다.
+- 로드 전 `used_mb`는 `0`, 로드 후에는 `1024`로 바뀌어 세션 상태를 숫자로도 확인할 수 있습니다.
+
+## 영향
+
+- 상태 전환이 단순해져 테스트에서 엔진 준비 여부를 쉽게 단언할 수 있습니다.
+- 메모리 조회 결과가 고정된 스키마를 유지해 모니터링 코드나 디버그 출력 작성이 쉬워졌습니다.
+- 환경 변수가 없을 때는 여전히 `DeviceNotFoundError`가 발생하므로, 세션 시작 전 환경 준비 여부를 바로 식별할 수 있습니다.
+
+## 예시
+
+```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+print(engine.is_loaded, engine.get_device_memory())
+
+engine.load_to_device(0)
+print(engine.is_loaded, engine.get_device_memory())
+
+engine.unload()
+print(engine.is_loaded, engine.get_device_memory())
+```

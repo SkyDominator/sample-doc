@@ -1,12 +1,42 @@
 ---
-title: Code block refresh
-description: Python snippets now render with a stronger code surface and a visible copy action.
+title: 생성 출력 메타데이터 추가
+description: 동기 생성과 스트리밍 생성이 동일한 mock 출력 계약을 공유하도록 정리되었습니다.
 ---
 
-# Code block refresh
+# 생성 출력 메타데이터 추가
 
-The code presentation was updated to better match modern API docs.
+이번 버전에서는 생성 결과가 어떤 설정에서 나왔는지 바로 확인할 수 있도록 mock 출력 형식을 고정했습니다.
 
-- Snippets use a dedicated dark code surface.
-- The language label is shown in the code header.
-- The copy action is always visible and works on plain code content.
+## 변경 사항
+
+- `generate()`는 항상 양자화 라벨과 토큰 예산을 포함한 접두사를 붙여 결과를 반환합니다.
+- `InferenceConfig.max_tokens`가 출력 문자열에 직접 반영되어 요청 설정을 쉽게 추적할 수 있습니다.
+- `generate_streaming()`은 별도 포맷을 만들지 않고 동일한 생성 결과를 공백 기준으로 분해해 전달합니다.
+
+## 출력 계약
+
+```text
+[mock:{quantization}:tokens={max_tokens}] {prompt}
+```
+
+- `quantization`은 엔진 생성자에서 받은 값입니다.
+- `max_tokens`는 `InferenceConfig`에서 받은 토큰 예산입니다.
+- `{prompt}`는 호출 시 전달한 프롬프트 문자열 그대로 유지됩니다.
+- `batch_size`와 `temperature`는 요청 객체에 저장되지만 현재 출력 접두사에는 포함되지 않습니다.
+
+## 영향
+
+- 동기 경로와 스트리밍 경로가 같은 payload를 공유하므로 두 경로의 동작 차이를 쉽게 비교할 수 있습니다.
+- 테스트에서는 문자열 접두사만 검사해도 현재 양자화 설정과 토큰 예산 반영 여부를 확인할 수 있습니다.
+
+## 예시
+
+```python
+from nano_llm import InferenceConfig
+
+out = engine.generate("status", InferenceConfig(max_tokens=32))
+tokens = list(engine.generate_streaming("status", InferenceConfig(max_tokens=32)))
+
+print(out)
+print(tokens)
+```

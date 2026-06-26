@@ -61,48 +61,71 @@ memory.allocate(256 * 1024)
 try:
 	memory.free(512 * 1024)
 except RuntimeError as exc:
-	print(f"recoverable error: {exc}")
+	print(f"예상 가능한 오류: {exc}")
 ```
 
-`allocate()` 반환값과 `utilization()` 값을 함께 기록하면, 문서 검증 단계에서도 메모리 예산 초과를 조기에 식별할 수 있습니다.
+`allocate()` 반환값과 `utilization()` 값을 함께 확인하면 메모리 풀의 현재 상태를 빠르게 파악할 수 있습니다.
 
-## 4) 문서 샘플 검증 실패
+## 4) 출력 접두사가 예상과 다름
 
 증상:
-- CI에서 `validate_snippets.py` 단계 실패
+- 결과가 `[mock:FP16:tokens=128] ...` 형태로 나오며 원하는 설정이 보이지 않음
 
 원인:
-- 문서 코드 블록의 import 경로/시그니처/환경변수 누락
+- `quantization`을 생성자에서 넘기지 않았거나 `InferenceConfig(max_tokens=...)`를 생략함
 
 해결:
 
-1. 샘플 코드에 `from nano_llm import ...` 경로를 사용했는지 확인
-2. 하드웨어 모의 변수 설정 여부 확인
-3. 최근 API 변경 후 `generate_api.py` 재실행 여부 확인
+```python
+import os
 
-## 5) 번역 후 MDX 깨짐
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
+engine.load_to_device(0)
+print(engine.generate("status", InferenceConfig(max_tokens=32)))
+```
+
+## 5) `get_device_memory()` 값이 항상 0
 
 증상:
-- 번역 단계 이후 빌드에서 MDX 파싱 오류
+- `used_mb`가 계속 `0`으로 표시됨
 
 원인:
-- 번역 과정에서 코드 펜스/MDX 태그가 손상됨
+- 아직 `load_to_device()`를 호출하지 않았거나 이미 `unload()`를 호출함
 
 해결:
 
-1. `translate_docs.py` 로그에서 placeholder 복원 실패 여부 확인
-2. 최근 추가한 MDX 컴포넌트가 보호 패턴에 포함되는지 점검
-3. 문제 파일만 재번역 후 diff 비교
+```python
+import os
 
-## 6) 링크 검사 실패
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock.bin")
+print(engine.get_device_memory())
+
+engine.load_to_device(0)
+print(engine.get_device_memory())
+```
+
+## 6) 스트리밍 결과가 세부 토큰화처럼 보이지 않음
 
 증상:
-- `lychee` 단계에서 dead link 감지
+- `generate_streaming()` 결과가 서브워드 토큰처럼 잘게 쪼개지지 않음
 
 원인:
-- 문서 이동 후 상대 링크 미수정
+- 현재 구현은 최종 문자열을 공백 기준으로만 분리함
 
 해결:
 
-- 문서 이동 시 링크를 즉시 갱신
-- 빌드 산출물 기준으로 링크 체크를 유지해 릴리즈 전에 실패를 노출
+```python
+tokens = list(engine.generate_streaming("stream test"))
+print(tokens)
+print(" ".join(tokens))
+```
+
+전체 문자열이 필요하면 `generate()`를 직접 호출하고, 스트리밍 경로를 검사할 때는 공백 단위 분해라는 현재 계약을 기준으로 확인합니다.

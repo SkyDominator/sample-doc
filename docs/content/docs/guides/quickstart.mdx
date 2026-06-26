@@ -5,8 +5,8 @@ description: nano-llm-engine 빠른 시작 가이드
 
 # 빠른 시작
 
-이 문서는 `nano-llm-engine` SDK를 사용해 5분 안에 모의 LLM 추론을 실행하는 흐름을 설명합니다.
-실제 RNGD 하드웨어 대신 `MOCK_RNGD_HARDWARE` 환경 변수를 통해 하드웨어 연동을 시뮬레이션합니다.
+이 가이드는 `nano-llm-engine` SDK로 모의 장치 세션을 열고 단일 생성 요청을 실행하는 최소 경로를 설명합니다.
+실제 RNGD 하드웨어 대신 `MOCK_RNGD_HARDWARE` 환경 변수를 통해 장치 연동을 시뮬레이션합니다.
 
 ## 1. SDK 설치
 
@@ -18,7 +18,7 @@ pip install -e ./sdk
 
 ## 2. 최소 실행 예제
 
-아래 코드는 문서 검증 파이프라인에서 실제로 실행되는 형태입니다.
+아래 코드는 엔진 생성, 장치 로드, 단건 생성, 언로드까지의 기본 흐름을 보여줍니다.
 
 ```python
 import os
@@ -36,7 +36,7 @@ engine = NanoLLMEngine(
 engine.load_to_device(device_id=0)
 
 result = engine.generate(
-	prompt="다음 문장을 영어로 번역해줘: 문서 자동 검증은 신뢰도를 높인다.",
+	prompt="INT8 설정과 토큰 예산이 출력 문자열에 어떻게 드러나는지 설명해줘.",
 	config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
 )
 
@@ -47,7 +47,7 @@ engine.unload()
 
 ## 3. 스트리밍 추론 예제
 
-스트리밍 인터페이스를 사용하면 토큰 단위로 결과를 확인할 수 있습니다.
+스트리밍 인터페이스는 동기 생성 결과를 공백 단위 토큰으로 나눠 전달합니다.
 
 ```python
 import os
@@ -59,7 +59,7 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
 engine.load_to_device()
 
 stream = engine.generate_streaming(
-	"스트리밍 출력의 목적을 설명해줘",
+	"스트리밍 출력이 동기 생성 결과와 어떤 관계인지 설명해줘.",
 	InferenceConfig(max_tokens=24, temperature=0.0),
 )
 for token in stream:
@@ -70,7 +70,7 @@ engine.unload()
 
 ## 4. 실패 시나리오 확인
 
-하드웨어 환경 변수가 없으면 SDK가 즉시 오류를 발생시켜 문서 예제와 런타임 사이의 드리프트를 빠르게 발견할 수 있습니다.
+하드웨어 환경 변수가 없으면 SDK가 즉시 오류를 발생시켜 장치 세션을 시작하기 전에 실행 환경 누락을 드러냅니다.
 
 ```python
 import os
@@ -84,11 +84,12 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 try:
 	engine.load_to_device(0)
 except DeviceNotFoundError as exc:
-	print(f"expected error: {exc}")
+	print(f"예상된 오류: {exc}")
 ```
 
 ## 5. 다음 단계
 
 - 개념 이해: `guides/concepts.mdx`
+- API 레퍼런스: `api/engine.mdx`
 - 엔드투엔드 연습: `tutorials/inference-pipeline.mdx`
 - 문제 해결: `troubleshooting/common-issues.mdx`
