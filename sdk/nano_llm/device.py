@@ -32,17 +32,42 @@ except Exception:
 
 
 class DeviceMemory:
-    """Device memory abstraction using Rust extension when available."""
+    """Device memory abstraction backed by Rust when available.
+
+    Args:
+        total_bytes: Total device memory capacity exposed by the wrapper.
+    """
 
     def __init__(self, total_bytes: int) -> None:
         impl = _RustDeviceMemory if _RustDeviceMemory is not None else _PythonDeviceMemory
         self._impl = impl(total_bytes)
 
     def allocate(self, bytes_size: int) -> bool:
+        """Reserve bytes from the device memory pool.
+
+        Args:
+            bytes_size: Number of bytes to reserve.
+
+        Returns:
+            True when the allocation succeeds, otherwise False.
+        """
         return self._impl.allocate(bytes_size)
 
     def free(self, bytes_size: int) -> None:
+        """Release previously reserved bytes.
+
+        Args:
+            bytes_size: Number of bytes to release.
+
+        Raises:
+            RuntimeError: If the requested free size exceeds the allocated size.
+        """
         self._impl.free(bytes_size)
 
     def utilization(self) -> float:
+        """Return the current memory utilization ratio.
+
+        Returns:
+            Fraction of used memory in the range 0.0 to 1.0.
+        """
         return float(self._impl.utilization())

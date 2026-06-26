@@ -5,93 +5,254 @@ description: "NanoLLMEngine 자동 생성 API 문서"
 
 # NanoLLMEngine
 
-Mock LLM runtime for documentation and CI sample validation.
+Mock inference engine for documentation and CI validation workflows.
 
-Args:
-    model_path: Path to the compiled model artifact.
-    quantization: Quantization mode used for mock inference.
-    kv_cache_config: Optional KV cache configuration.
+## 빠른 시작
+
+#### 예제
+
+```python
+import os
+
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
+engine.load_to_device()
+
+stream = engine.generate_streaming(
+	"스트리밍 출력의 목적을 설명해줘",
+	InferenceConfig(max_tokens=24, temperature=0.0),
+)
+for token in stream:
+	print(token)
+
+engine.unload()
+```
+
+## 생성자
+
+```python
+NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
+```
+
+### 매개변수
+
+| 매개변수 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `model_path` | `str` | - | Path to the compiled mock model artifact. |
+| `quantization` | `QuantizationType` | `'FP16'` | Quantization label attached to mock generation output. |
+| `kv_cache_config` | `KVCacheConfig | None` | `None` | Optional KV cache configuration stored on the engine. |
+
+## 사용 순서
+
+1. `NanoLLMEngine(...)`로 인스턴스를 생성합니다.
+2. `load_to_device()` - Open a mock device session and mark the engine as loaded.
+3. `generate()` - Run a synchronous mock generation request.
+4. `generate_streaming()` - Yield mock generation output through a streaming interface.
+5. `get_device_memory()` - Return mock memory telemetry for the current engine state.
+6. `unload()` - Close the mock device session and reset engine state.
 
 ## 메서드
 
-### 메서드: `generate(prompt, config=None)`
+### `load_to_device(device_id=0)`
+
+Open a mock device session and mark the engine as loaded.
 
 ```python
-# Signature: NanoLLMEngine.generate(prompt, config=None)
-# See method description below for behavior and constraints.
+NanoLLMEngine.load_to_device(device_id=0) -> bool
 ```
 
-Run synchronous mock generation.
+#### 매개변수
 
-Args:
-    prompt: Input prompt text.
-    config: Optional inference parameters.
+| 매개변수 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `device_id` | `int` | `0` | Mock hardware device index. |
 
-Returns:
-    Mock model output text.
+#### 반환값
 
-Raises:
-    GenerationError: If the engine was not loaded first.
+True when the mock device session is ready.
 
+#### 예외
 
-### 메서드: `generate_streaming(prompt, config=None)`
+| Error | 조건 |
+| :-- | :-- |
+| `DeviceNotFoundError` | If ``MOCK_RNGD_HARDWARE`` is not set. |
+
+#### 예제
 
 ```python
-# Signature: NanoLLMEngine.generate_streaming(prompt, config=None)
-# See method description below for behavior and constraints.
+import os
+
+from nano_llm import NanoLLMEngine
+from nano_llm.errors import DeviceNotFoundError
+
+os.environ.pop("MOCK_RNGD_HARDWARE", None)
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+try:
+	engine.load_to_device(0)
+except DeviceNotFoundError as exc:
+	print(f"expected error: {exc}")
 ```
 
-Run mock generation and stream output token by token.
+### `generate(prompt, config=None)`
 
-Args:
-    prompt: Input prompt text.
-    config: Optional inference parameters.
-
-Yields:
-    Whitespace-split tokens from the mock generation output.
-
-
-### 메서드: `get_device_memory()`
+Run a synchronous mock generation request.
 
 ```python
-# Signature: NanoLLMEngine.get_device_memory()
-# See method description below for behavior and constraints.
+NanoLLMEngine.generate(prompt, config=None) -> str
 ```
 
-Return mock memory telemetry for the active device.
+#### 매개변수
 
-Returns:
-    Dictionary with total and used memory in MB.
+| 매개변수 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `prompt` | `str` | - | Input prompt text. |
+| `config` | `InferenceConfig | None` | `None` | Optional inference settings for token and sampling controls. |
 
+#### 반환값
 
-### 메서드: `load_to_device(device_id=0)`
+Mock model output text prefixed with quantization and token metadata.
+
+#### 예외
+
+| Error | 조건 |
+| :-- | :-- |
+| `GenerationError` | If the engine has not been loaded yet. |
+
+#### 예제
 
 ```python
-# Signature: NanoLLMEngine.load_to_device(device_id=0)
-# See method description below for behavior and constraints.
+from nano_llm import InferenceConfig
+
+cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
+out = engine.generate("SDK 문서 자동 검증의 장점 세 가지를 알려줘", cfg)
+print(out)
 ```
 
-Load the model into a mock device session.
+### `generate_streaming(prompt, config=None)`
 
-Args:
-    device_id: Mock hardware device index.
-
-Returns:
-    True when the model is loaded.
-
-Raises:
-    DeviceNotFoundError: If `MOCK_RNGD_HARDWARE` is not set.
-
-
-### 메서드: `unload()`
+Yield mock generation output through a streaming interface.
 
 ```python
-# Signature: NanoLLMEngine.unload()
-# See method description below for behavior and constraints.
+NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
 ```
 
-Release the mock device session.
+#### 매개변수
 
-Returns:
-    True when the session state is cleared.
+| 매개변수 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `prompt` | `str` | - | Input prompt text. |
+| `config` | `InferenceConfig | None` | `None` | Optional inference settings for token and sampling controls. |
 
+#### 생성값
+
+Whitespace-split tokens from the generated mock output.
+
+#### 예외
+
+| Error | 조건 |
+| :-- | :-- |
+| `GenerationError` | If the underlying generation request runs before the engine is loaded. |
+
+#### 예제
+
+```python
+from nano_llm import InferenceConfig
+
+for token in engine.generate_streaming(
+    "배치 추론과 지연 시간의 관계를 요약해줘",
+    InferenceConfig(max_tokens=40, temperature=0.1),
+):
+    print(token)
+```
+
+### `get_device_memory()`
+
+Return mock memory telemetry for the current engine state.
+
+```python
+NanoLLMEngine.get_device_memory() -> dict[str, int]
+```
+
+#### 매개변수
+
+매개변수 없음.
+
+#### 반환값
+
+Dictionary with ``total_mb`` and ``used_mb`` values.
+
+#### 예제
+
+```python
+stats = engine.get_device_memory()
+print(stats["total_mb"], stats["used_mb"])
+```
+
+### `unload()`
+
+Close the mock device session and reset engine state.
+
+```python
+NanoLLMEngine.unload() -> bool
+```
+
+#### 매개변수
+
+매개변수 없음.
+
+#### 반환값
+
+True when the loaded state has been cleared.
+
+#### 예제
+
+```python
+engine.unload()
+```
+
+## 관련 타입
+
+### `InferenceConfig`
+
+Per-request inference settings for mock generation.
+
+| 필드 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `batch_size` | `int` | `1` | Number of prompts processed in one mock request. |
+| `max_tokens` | `int` | `128` | Maximum token budget reflected in the mock output prefix. |
+| `temperature` | `float` | `0.7` | Sampling temperature placeholder preserved across examples and tests. |
+
+### `KVCacheConfig`
+
+Configuration for KV cache behavior attached to the engine.
+
+| 필드 | 타입 | 기본값 | 설명 |
+| :-- | :-- | :-- | :-- |
+| `max_seq_len` | `int` | `4096` | Maximum sequence length assumed for cache allocation. |
+| `cache_dtype` | `str` | `'fp16'` | Precision label used for KV cache storage. |
+
+### `QuantizationType`
+
+지원하는 리터럴 값입니다.
+
+| 값 |
+| :-- |
+| `INT4` |
+| `INT8` |
+| `FP16` |
+| `FP32` |
+
+## 예외 타입
+
+| Error | 발생 메서드 | 설명 |
+| :-- | :-- | :-- |
+| `DeviceNotFoundError` | `load_to_device()` | Raised when mock hardware is unavailable. |
+| `GenerationError` | `generate()`, `generate_streaming()` | Raised when generation fails. |
+
+## 함께 보기
+
+- [빠른 시작](/ko/docs/guides/quickstart)
+- [추론 파이프라인 튜토리얼](/ko/docs/tutorials/inference-pipeline)
