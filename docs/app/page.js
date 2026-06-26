@@ -30,9 +30,9 @@ export default async function HomePage({ searchParams }) {
   const entries = [
     {
       eyebrow: "Guides",
-      title: "Concept-first documentation",
+      title: "Concepts",
       description:
-        "Quantization, KV cache, batching, and streaming are structured as build paths rather than buried as isolated notes.",
+        "Quantization, KV cache, batching, and streaming",
       href: getDocsHref(currentLocale, ["guides", "concepts"]),
       icon: Globe,
     },
@@ -46,9 +46,9 @@ export default async function HomePage({ searchParams }) {
     },
     {
       eyebrow: "API",
-      title: "Generated API reference",
+      title: "Auto-generated API Reference",
       description:
-        "Reference pages are derived from source and rendered alongside narrative docs in the same documentation surface.",
+        "Reference pages are derived from source via griffe and rendered alongside narrative docs.",
       href: getDocsHref(currentLocale, ["api", "engine"]),
       icon: Braces,
     },
@@ -71,7 +71,7 @@ export default async function HomePage({ searchParams }) {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">API Platform</p>
-                <h1 className="mt-1 text-lg font-semibold text-slate-950">nano-llm-engine docs</h1>
+                <h1 className="mt-1 text-lg font-semibold text-slate-950">Nano LLM</h1>
               </div>
             </div>
 
@@ -88,12 +88,12 @@ export default async function HomePage({ searchParams }) {
 
         <section className="grid gap-6 pb-8 pt-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)] lg:items-stretch lg:pb-12 lg:pt-12">
           <div className="rounded-[2.25rem] border border-white/80 bg-white/82 p-7 shadow-panel backdrop-blur sm:p-10">
-            <Badge>Docs-as-code portfolio</Badge>
+            <Badge>Brought by Ray Kim</Badge>
             <h2 className="mt-6 max-w-4xl text-balance text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-              A runnable API guide surface for a mock inference SDK.
+              Light-speed Inference with RNGD Hardware
             </h2>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-              The site follows the shape of a modern API platform: grouped docs navigation, locale-aware paths, quick command search, generated reference pages, and MDX components for cards, tabs, and callouts.
+              This is a mockup documentation site with mdx components, runnable snippets, and generated API reference. It is built with Next.js 14, Radix UI, Tailwind CSS, and shadcn/ui, and Vibe Coding.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -112,20 +112,17 @@ export default async function HomePage({ searchParams }) {
           <Card className="h-full bg-slate-950 text-white shadow-panel">
             <CardHeader>
               <Badge className="w-fit border-white/10 bg-white/10 text-white" variant="secondary">
-                Build paths
+                About Ray Kim
               </Badge>
-              <CardTitle className="text-2xl text-white">What this docs pipeline proves</CardTitle>
+              <CardTitle className="text-2xl text-white">Let us start our prosperous journey!</CardTitle>
               <CardDescription className="text-slate-300">
-                Writer-owned automation and generated reference can live in the same product-grade docs shell.
+                Hire Ray Kim and get your documentation site benefitted from the world-class knowledge engineering service!
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-4 text-sm leading-7 text-slate-300">
-                <li>Source changes regenerate API reference pages.</li>
-                <li>Runnable snippets are executed, not just linted.</li>
-                <li>Locale switching preserves the active docs surface.</li>
-                <li>Navigation is grouped by docs intent: Guides, API, Tutorials, and more.</li>
-                <li>MDX components make callouts, tabs, and cards consistent across pages.</li>
+                <li>Maintained More than 20 Agent Workflows for Technical Writing</li>
+                <li>Professional in Information Architecture and Knowledge Service Engineering</li>
               </ul>
             </CardContent>
           </Card>
@@ -133,8 +130,8 @@ export default async function HomePage({ searchParams }) {
 
         <section className="pb-10">
           <div className="mb-6 flex items-center gap-3">
-            <Badge variant="outline">Start building</Badge>
-            <p className="text-sm text-slate-500">Key paths into the documentation surface</p>
+            <Badge variant="outline">Start building with Ray Kim</Badge>
+            <p className="text-sm text-slate-500">Quick-start, Tutorial, Migration Guide, Release Notes, and API Reference</p>
           </div>
 
           <Cards className="xl:grid-cols-3">
@@ -195,7 +192,7 @@ export default async function HomePage({ searchParams }) {
               </div>
               <CardTitle>Open the tutorial path</CardTitle>
               <CardDescription>
-                Start from the runnable inference pipeline to see the full docs-as-code loop with executable snippets.
+                Start from the runnable inference pipeline with executable snippets!
               </CardDescription>
             </CardHeader>
             <CardContent>
