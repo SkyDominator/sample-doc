@@ -1,11 +1,12 @@
 ---
 title: "API Reference: NanoLLMEngine"
-description: "Auto-generated API reference for NanoLLMEngine"
+description: "The NanoLLMEngine class and related configuration types"
 ---
 
 # NanoLLMEngine
 
-Mock inference engine for documentation and CI validation workflows.
+`NanoLLMEngine` is a mock inference engine that imitates the RNGD device lifecycle.
+It provides the basic flow from instance creation through device load, synchronous and streaming generation, memory queries, and session shutdown.
 
 ## Quickstart
 
@@ -21,11 +22,11 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
 engine.load_to_device()
 
 stream = engine.generate_streaming(
-	"스트리밍 출력의 목적을 설명해줘",
-	InferenceConfig(max_tokens=24, temperature=0.0),
+    "Summarize which settings the streaming output was generated from.",
+    InferenceConfig(max_tokens=24, temperature=0.0),
 )
 for token in stream:
-	print(token)
+    print(token)
 
 engine.unload()
 ```
@@ -41,17 +42,17 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 | Parameter | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
 | `model_path` | `str` | - | Path to the compiled mock model artifact. |
-| `quantization` | `QuantizationType` | `'FP16'` | Quantization label attached to mock generation output. |
-| `kv_cache_config` | `KVCacheConfig | None` | `None` | Optional KV cache configuration stored on the engine. |
+| `quantization` | `QuantizationType` | `'FP16'` | Quantization label reflected in the generation output prefix. |
+| `kv_cache_config` | `KVCacheConfig \| None` | `None` | KV cache configuration object stored on the engine instance. |
 
-## Typical workflow
+## Usage Order
 
 1. Create the instance with `NanoLLMEngine(...)`.
-2. `load_to_device()` - Open a mock device session and mark the engine as loaded.
-3. `generate()` - Run a synchronous mock generation request.
-4. `generate_streaming()` - Yield mock generation output through a streaming interface.
-5. `get_device_memory()` - Return mock memory telemetry for the current engine state.
-6. `unload()` - Close the mock device session and reset engine state.
+2. Use `load_to_device()` to open a mock device session and move the engine into a loaded state.
+3. Use `generate()` to run a synchronous generation request.
+4. Use `generate_streaming()` to consume the same generated result through a streaming interface.
+5. Use `get_device_memory()` to inspect the current session's mock memory state.
+6. Use `unload()` to close the session and reset the loaded state.
 
 ## Methods
 
@@ -93,7 +94,7 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 try:
 	engine.load_to_device(0)
 except DeviceNotFoundError as exc:
-	print(f"expected error: {exc}")
+	print(f"Expected error: {exc}")
 ```
 
 ### `generate(prompt, config=None)`
@@ -109,11 +110,11 @@ NanoLLMEngine.generate(prompt, config=None) -> str
 | Parameter | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
 | `prompt` | `str` | - | Input prompt text. |
-| `config` | `InferenceConfig | None` | `None` | Optional inference settings for token and sampling controls. |
+| `config` | `InferenceConfig \| None` | `None` | Request configuration containing token budget and sampling controls. |
 
 #### Returns
 
-Mock model output text prefixed with quantization and token metadata.
+Mock output text prefixed with quantization and token-budget metadata.
 
 #### Raises
 
@@ -127,7 +128,7 @@ Mock model output text prefixed with quantization and token metadata.
 from nano_llm import InferenceConfig
 
 cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("SDK 문서 자동 검증의 장점 세 가지를 알려줘", cfg)
+out = engine.generate("Explain what the INT8 setting means for the memory usage label.", cfg)
 print(out)
 ```
 
@@ -144,11 +145,11 @@ NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, No
 | Parameter | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
 | `prompt` | `str` | - | Input prompt text. |
-| `config` | `InferenceConfig | None` | `None` | Optional inference settings for token and sampling controls. |
+| `config` | `InferenceConfig \| None` | `None` | Request configuration containing token budget and sampling controls. |
 
 #### Yields
 
-Whitespace-split tokens from the generated mock output.
+Tokens produced by splitting the synchronous generation result on whitespace.
 
 #### Raises
 
@@ -162,7 +163,7 @@ Whitespace-split tokens from the generated mock output.
 from nano_llm import InferenceConfig
 
 for token in engine.generate_streaming(
-    "배치 추론과 지연 시간의 관계를 요약해줘",
+	"Explain how batched inference settings are reflected in streaming output.",
     InferenceConfig(max_tokens=40, temperature=0.1),
 ):
     print(token)
@@ -217,22 +218,22 @@ engine.unload()
 
 ### `InferenceConfig`
 
-Per-request inference settings for mock generation.
+Configuration object passed to each mock generation request.
 
 | Field | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
 | `batch_size` | `int` | `1` | Number of prompts processed in one mock request. |
-| `max_tokens` | `int` | `128` | Maximum token budget reflected in the mock output prefix. |
-| `temperature` | `float` | `0.7` | Sampling temperature placeholder preserved across examples and tests. |
+| `max_tokens` | `int` | `128` | Maximum token budget reflected in the output prefix. |
+| `temperature` | `float` | `0.7` | Placeholder value representing sampling diversity. |
 
 ### `KVCacheConfig`
 
-Configuration for KV cache behavior attached to the engine.
+KV cache configuration object attached to the engine.
 
 | Field | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
-| `max_seq_len` | `int` | `4096` | Maximum sequence length assumed for cache allocation. |
-| `cache_dtype` | `str` | `'fp16'` | Precision label used for KV cache storage. |
+| `max_seq_len` | `int` | `4096` | Maximum sequence length the cache allocation is assumed to support. |
+| `cache_dtype` | `str` | `'fp16'` | Precision label for KV cache storage. |
 
 ### `QuantizationType`
 
@@ -249,10 +250,10 @@ Supported literal values.
 
 | Error | Raised by | Description |
 | :-- | :-- | :-- |
-| `DeviceNotFoundError` | `load_to_device()` | Raised when mock hardware is unavailable. |
-| `GenerationError` | `generate()`, `generate_streaming()` | Raised when generation fails. |
+| `DeviceNotFoundError` | `load_to_device()` | Raised when the mock hardware environment variable is missing. |
+| `GenerationError` | `generate()`, `generate_streaming()` | Raised when generation is called on an engine that has not been loaded. |
 
 ## See also
 
-- [Inference Pipeline](../tutorials/inference-pipeline)
 - [Quickstart](../guides/quickstart)
+- [Inference Pipeline Tutorial](../tutorials/inference-pipeline)

@@ -1,24 +1,24 @@
 ---
-title: 빠른 시작
-description: nano-llm-engine 빠른 시작 가이드
+title: Quickstart
+description: Quickstart guide for nano-llm-engine
 ---
 
-# 빠른 시작
+# Quickstart
 
-이 문서는 `nano-llm-engine` SDK를 사용해 5분 안에 모의 LLM 추론을 실행하는 흐름을 설명합니다.
-실제 RNGD 하드웨어 대신 `MOCK_RNGD_HARDWARE` 환경 변수를 통해 하드웨어 연동을 시뮬레이션합니다.
+This guide explains the shortest path to opening a mock device session and running a single generation request with the `nano-llm-engine` SDK.
+Instead of real RNGD hardware, it simulates device integration through the `MOCK_RNGD_HARDWARE` environment variable.
 
-## 1. SDK 설치
+## 1. Install the SDK
 
-프로젝트 루트에서 Python SDK를 설치합니다.
+Install the Python SDK from the project root.
 
 ```bash
 pip install -e ./sdk
 ```
 
-## 2. 최소 실행 예제
+## 2. Minimal Run Example
 
-아래 코드는 문서 검증 파이프라인에서 실제로 실행되는 형태입니다.
+The example below shows the basic flow from engine creation through device load, single generation, and unload.
 
 ```python
 import os
@@ -36,8 +36,8 @@ engine = NanoLLMEngine(
 engine.load_to_device(device_id=0)
 
 result = engine.generate(
-	prompt="다음 문장을 영어로 번역해줘: 문서 자동 검증은 신뢰도를 높인다.",
-	config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
+    prompt="Explain how the INT8 setting and token budget appear in the output string.",
+    config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
 )
 
 print(result)
@@ -45,9 +45,9 @@ print(result)
 engine.unload()
 ```
 
-## 3. 스트리밍 추론 예제
+## 3. Streaming Inference Example
 
-스트리밍 인터페이스를 사용하면 토큰 단위로 결과를 확인할 수 있습니다.
+The streaming interface returns the synchronous generation result split into whitespace-delimited tokens.
 
 ```python
 import os
@@ -59,18 +59,18 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
 engine.load_to_device()
 
 stream = engine.generate_streaming(
-	"스트리밍 출력의 목적을 설명해줘",
-	InferenceConfig(max_tokens=24, temperature=0.0),
+    "Explain how streaming output relates to the synchronous generation result.",
+    InferenceConfig(max_tokens=24, temperature=0.0),
 )
 for token in stream:
-	print(token)
+    print(token)
 
 engine.unload()
 ```
 
-## 4. 실패 시나리오 확인
+## 4. Check a Failure Scenario
 
-하드웨어 환경 변수가 없으면 SDK가 즉시 오류를 발생시켜 문서 예제와 런타임 사이의 드리프트를 빠르게 발견할 수 있습니다.
+If the hardware environment variable is missing, the SDK raises an error immediately and exposes the missing runtime setup before a device session starts.
 
 ```python
 import os
@@ -84,11 +84,12 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 try:
 	engine.load_to_device(0)
 except DeviceNotFoundError as exc:
-	print(f"expected error: {exc}")
+	print(f"Expected error: {exc}")
 ```
 
-## 5. 다음 단계
+## 5. Next Steps
 
 - [Core Concepts](./concepts)
+- [API Reference](../api/engine)
 - [Inference Pipeline](../tutorials/inference-pipeline)
 - [Troubleshooting](../troubleshooting/common-issues)

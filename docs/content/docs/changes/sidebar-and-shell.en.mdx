@@ -1,12 +1,40 @@
 ---
-title: Sidebar simplification
-description: Reduced the left navigation to a plain text list with lighter section headers.
+title: Session state and memory telemetry
+description: This version clarifies engine load/unload state transitions and the memory query contract.
 ---
 
-# Sidebar simplification
+# Session state and memory telemetry
 
-The docs shell now uses a much lighter left navigation treatment.
+This update refines the state transition rules for `NanoLLMEngine` so the session lifecycle is easier to reason about.
 
-- Section headers stay collapsible.
-- Page links render as plain text rows instead of card-like blocks.
-- Locale switching stays available without adding extra visual weight.
+## What changed
+
+- When `load_to_device()` succeeds, `is_loaded` switches to `True` immediately.
+- `unload()` clears state and returns `True` regardless of whether the engine was already loaded.
+- `get_device_memory()` always returns the same structure with `total_mb` and `used_mb` keys.
+- Before load, `used_mb` is `0`; after load, it changes to `1024`, so session state is visible numerically as well.
+
+## Impact
+
+- Simpler state transitions make it easier to assert engine readiness in tests.
+- The fixed memory-query schema makes monitoring and debug output easier to write.
+- If the environment variable is missing, `DeviceNotFoundError` still exposes setup problems before session start.
+
+## Example
+
+```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+print(engine.is_loaded, engine.get_device_memory())
+
+engine.load_to_device(0)
+print(engine.is_loaded, engine.get_device_memory())
+
+engine.unload()
+print(engine.is_loaded, engine.get_device_memory())
+```

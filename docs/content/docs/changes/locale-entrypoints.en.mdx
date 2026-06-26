@@ -1,12 +1,36 @@
 ---
-title: Locale entrypoints
-description: Landing-page locale selection now uses a combo box instead of a dedicated English button.
+title: Explicit configuration object split
+description: Process-level, engine-level, and request-level settings are now organized as separate responsibilities.
 ---
 
-# Locale entrypoints
+# Explicit configuration object split
 
-Landing-page locale selection now uses a compact select control.
+This update makes the runtime configuration layers clearer by separating which settings belong to which level.
 
-- Readers pick the docs locale from a single control.
-- The primary CTA stays focused on entering the docs.
-- Locale-specific docs routes remain explicit and shareable.
+## What changed
+
+- Process-level configuration remains the `MOCK_RNGD_HARDWARE` environment variable.
+- Engine-level configuration is grouped in the `NanoLLMEngine(model_path, quantization, kv_cache_config)` constructor.
+- Request-level configuration is split into `InferenceConfig(batch_size, max_tokens, temperature)` so it can vary per call.
+- Because `KVCacheConfig` is now a separate object, cache length and storage precision can be preserved explicitly alongside the engine.
+
+## Impact
+
+- The boundary between environment setup, engine construction, and request tuning is clearer in calling code.
+- It explicitly supports reusing one engine instance while varying only `max_tokens` or `temperature` across requests.
+- Because `kv_cache_config` is stored as an engine attribute, cache settings are easier to inspect later.
+
+## Example
+
+```python
+from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+
+engine = NanoLLMEngine(
+	model_path="models/mock-llm.bin",
+	quantization="INT8",
+	kv_cache_config=KVCacheConfig(max_seq_len=8192, cache_dtype="fp16"),
+)
+
+cfg = InferenceConfig(batch_size=2, max_tokens=64, temperature=0.2)
+print(engine.kv_cache_config.max_seq_len, cfg.max_tokens)
+```

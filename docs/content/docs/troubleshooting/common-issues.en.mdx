@@ -1,19 +1,19 @@
 ---
-title: 공통 문제 해결
-description: 자주 발생하는 오류와 해결 방법
+title: Common Issues
+description: Frequent errors and how to resolve them
 ---
 
-# 공통 문제 해결
+# Common Issues
 
 ## 1) DeviceNotFoundError: mock hardware not found
 
-증상:
-- `load_to_device()` 호출 시 `DeviceNotFoundError` 발생
+Symptoms:
+- `load_to_device()` raises `DeviceNotFoundError`
 
-원인:
-- `MOCK_RNGD_HARDWARE` 환경 변수가 설정되지 않음
+Cause:
+- The `MOCK_RNGD_HARDWARE` environment variable is not set.
 
-해결:
+Resolution:
 
 ```python
 import os
@@ -23,13 +23,13 @@ os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
 ## 2) GenerationError: engine is not loaded
 
-증상:
-- `generate()` 또는 `generate_streaming()` 호출 시 `GenerationError` 발생
+Symptoms:
+- `generate()` or `generate_streaming()` raises `GenerationError`
 
-원인:
-- `load_to_device()` 호출 전 생성 함수 실행
+Cause:
+- A generation function is called before `load_to_device()`.
 
-해결:
+Resolution:
 
 ```python
 import os
@@ -42,43 +42,90 @@ engine.load_to_device(0)
 print(engine.generate("ready"))
 ```
 
-## 3) 문서 샘플 검증 실패
+## 3) RuntimeError: free size exceeds used memory
 
-증상:
-- CI에서 `validate_snippets.py` 단계 실패
+Symptoms:
+- `DeviceMemory.free()` raises `RuntimeError`
 
-원인:
-- 문서 코드 블록의 import 경로/시그니처/환경변수 누락
+Cause:
+- The code attempts to release more bytes than are currently reserved.
 
-해결:
+Resolution:
 
-1. 샘플 코드에 `from nano_llm import ...` 경로를 사용했는지 확인
-2. 하드웨어 모의 변수 설정 여부 확인
-3. 최근 API 변경 후 `generate_api.py` 재실행 여부 확인
+```python
+from nano_llm import DeviceMemory
 
-## 4) 번역 후 MDX 깨짐
+memory = DeviceMemory(total_bytes=1024 * 1024)
+memory.allocate(256 * 1024)
 
-증상:
-- 번역 단계 이후 빌드에서 MDX 파싱 오류
+try:
+	memory.free(512 * 1024)
+except RuntimeError as exc:
+	print(f"Expected error: {exc}")
+```
 
-원인:
-- 번역 과정에서 코드 펜스/MDX 태그가 손상됨
+Checking the `allocate()` return value together with `utilization()` makes it easier to understand the current state of the memory pool.
 
-해결:
+## 4) The output prefix is not what you expected
 
-1. `translate_docs.py` 로그에서 placeholder 복원 실패 여부 확인
-2. 최근 추가한 MDX 컴포넌트가 보호 패턴에 포함되는지 점검
-3. 문제 파일만 재번역 후 diff 비교
+Symptoms:
+- The result looks like `[mock:FP16:tokens=128] ...`, and the desired configuration is not visible.
 
-## 5) 링크 검사 실패
+Cause:
+- `quantization` was not passed to the constructor, or `InferenceConfig(max_tokens=...)` was omitted.
 
-증상:
-- `lychee` 단계에서 dead link 감지
+Resolution:
 
-원인:
-- 문서 이동 후 상대 링크 미수정
+```python
+import os
 
-해결:
+from nano_llm import InferenceConfig, NanoLLMEngine
 
-- 문서 이동 시 링크를 즉시 갱신
-- 빌드 산출물 기준으로 링크 체크를 유지해 릴리즈 전에 실패를 노출
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
+engine.load_to_device(0)
+print(engine.generate("status", InferenceConfig(max_tokens=32)))
+```
+
+## 5) `get_device_memory()` always returns 0
+
+Symptoms:
+- `used_mb` keeps showing `0`
+
+Cause:
+- `load_to_device()` has not been called yet, or `unload()` was already called.
+
+Resolution:
+
+```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock.bin")
+print(engine.get_device_memory())
+
+engine.load_to_device(0)
+print(engine.get_device_memory())
+```
+
+## 6) Streaming output does not look like fine-grained tokenization
+
+Symptoms:
+- `generate_streaming()` does not split into subword-like tokens.
+
+Cause:
+- The current implementation only splits the final string on whitespace.
+
+Resolution:
+
+```python
+tokens = list(engine.generate_streaming("stream test"))
+print(tokens)
+print(" ".join(tokens))
+```
+
+If you need the full string, call `generate()` directly. When checking the streaming path, validate it against the current contract of whitespace-based splitting.

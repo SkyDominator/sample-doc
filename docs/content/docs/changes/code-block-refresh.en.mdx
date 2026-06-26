@@ -1,12 +1,42 @@
 ---
-title: Code block refresh
-description: Python snippets now render with a stronger code surface and a visible copy action.
+title: Generation output metadata added
+description: Synchronous and streaming generation now share the same mock output contract.
 ---
 
-# Code block refresh
+# Generation output metadata added
 
-The code presentation was updated to better match modern API docs.
+This version fixes the mock output format so you can see immediately which configuration produced a result.
 
-- Snippets use a dedicated dark code surface.
-- The language label is shown in the code header.
-- The copy action is always visible and works on plain code content.
+## What changed
+
+- `generate()` always returns a result with a prefix containing the quantization label and token budget.
+- `InferenceConfig.max_tokens` is reflected directly in the output string, so request settings are easier to trace.
+- `generate_streaming()` does not create a separate format and instead splits the same generated result on whitespace.
+
+## Output contract
+
+```text
+[mock:{quantization}:tokens={max_tokens}] {prompt}
+```
+
+- `quantization` comes from the engine constructor.
+- `max_tokens` comes from `InferenceConfig`.
+- `{prompt}` preserves the prompt string exactly as passed at call time.
+- `batch_size` and `temperature` are stored on the request object but are not included in the current output prefix.
+
+## Impact
+
+- Because the synchronous and streaming paths share the same payload, it is easy to compare their behavior.
+- In tests, checking only the string prefix is enough to verify the active quantization setting and token-budget reflection.
+
+## Example
+
+```python
+from nano_llm import InferenceConfig
+
+out = engine.generate("status", InferenceConfig(max_tokens=32))
+tokens = list(engine.generate_streaming("status", InferenceConfig(max_tokens=32)))
+
+print(out)
+print(tokens)
+```

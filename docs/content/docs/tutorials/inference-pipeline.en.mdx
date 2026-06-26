@@ -1,14 +1,13 @@
 ---
-title: 추론 파이프라인 튜토리얼
-description: 엔드투엔드 추론 파이프라인 예제
+title: Inference Pipeline Tutorial
+description: End-to-end inference pipeline example
 ---
 
-# 추론 파이프라인
+# Inference Pipeline
 
-이 튜토리얼은 실제 서비스 문서처럼 "설정 -> 로드 -> 생성 -> 스트리밍 -> 모니터링 -> 종료" 순서로 구성되어 있습니다.
-모든 코드는 CI에서 실행 가능한 형태를 유지합니다.
+This tutorial follows the flow of initializing a `NanoLLMEngine` instance, running generation and streaming requests, inspecting memory state and error paths, and then closing the session.
 
-## 1) 런타임 초기화
+## 1) Initialize the Runtime
 
 ```python
 import os
@@ -25,36 +24,57 @@ engine = NanoLLMEngine(
 engine.load_to_device(device_id=0)
 ```
 
-## 2) 단건 생성 요청
+## 2) Run a Single Generation Request
 
 ```python
 from nano_llm import InferenceConfig
 
 cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("SDK 문서 자동 검증의 장점 세 가지를 알려줘", cfg)
+out = engine.generate("Explain how the INT8 setting is displayed in the output string.", cfg)
 print(out)
 ```
 
-## 3) 스트리밍 요청
+`generate()` adds the `[mock:{quantization}:tokens={max_tokens}]` prefix so part of the current engine and request configuration is visible directly in the returned string.
+
+## 3) Run a Streaming Request
 
 ```python
 from nano_llm import InferenceConfig
 
 for token in engine.generate_streaming(
-    "배치 추론과 지연 시간의 관계를 요약해줘",
+    "Summarize the relationship between batched inference and latency.",
     InferenceConfig(max_tokens=40, temperature=0.1),
 ):
     print(token)
 ```
 
-## 4) 메모리 텔레메트리 확인
+`generate_streaming()` reuses the internal result from `generate()`, so joining the tokens back together yields the same payload as the synchronous call.
+
+## 4) Check Memory Telemetry
 
 ```python
 stats = engine.get_device_memory()
 print(stats["total_mb"], stats["used_mb"])
 ```
 
-## 5) 오류 처리 패턴
+`get_device_memory()` reads the mock memory state currently held by the engine. Before load, `used_mb` is `0`; after load, it is `1024`.
+
+## 5) Check Device Memory Pool Reservations
+
+```python
+from nano_llm import DeviceMemory
+
+memory = DeviceMemory(total_bytes=32 * 1024 * 1024)
+reserved = memory.allocate(16 * 1024 * 1024)
+print(reserved, f"{memory.utilization():.2f}")
+
+memory.free(16 * 1024 * 1024)
+print(f"{memory.utilization():.2f}")
+```
+
+This step shows a pattern for checking reservation availability in an independent memory pool, separate from engine telemetry.
+
+## 6) Error Handling Pattern
 
 ```python
 import os
@@ -68,18 +88,18 @@ probe = NanoLLMEngine(model_path="models/mock-llm.bin")
 try:
     probe.load_to_device(0)
 except DeviceNotFoundError as exc:
-    print(f"recoverable error: {exc}")
+    print(f"Expected error: {exc}")
 ```
 
-## 6) 종료
+## 7) Shutdown
 
 ```python
 engine.unload()
 ```
 
-## 운영 체크리스트
+## Operational Checklist
 
-1. 샘플 코드가 실제로 실행되는가?
-2. 실패 시 메시지가 문서 설명과 일치하는가?
-3. 릴리즈 시점 API 시그니처가 자동 문서에 반영되는가?
-4. 번역본이 코드/MDX 문법을 보존하는가?
+1. Does calling `load_to_device()` without `MOCK_RNGD_HARDWARE` still raise `DeviceNotFoundError`?
+2. After loading, does the `generate()` result reflect the current `quantization` and `max_tokens` values?
+3. If you join `generate_streaming()` tokens back together, do you get the same string as the synchronous result?
+4. After `unload()`, is `is_loaded` `False` and is `get_device_memory()["used_mb"]` equal to `0`?
