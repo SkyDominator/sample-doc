@@ -57,9 +57,9 @@ The goal here is to understand which knobs exist, where they live, and what they
 
     - `batch_size`: number of prompts grouped into one request
     - `max_tokens`: token budget reflected in the output prefix
-    - `temperature`: placeholder value representing sampling diversity
+    - `temperature`: placeholder request field accepted for API compatibility, but currently unused by generation behavior
 
-    In this implementation, `generate()` exposes only `max_tokens` in the string output, but `batch_size` and `temperature` are still passed together to preserve a runtime-like call shape.
+    In this implementation, only `max_tokens` changes the generated text. `batch_size` and `temperature` are accepted to preserve a runtime-like call shape, but they do not currently affect batching or sampling behavior.
 
     <Callout type="highlight" title="What actually changes today">
     In the current mock runtime, `max_tokens` is the request field you can observe directly in the generation prefix. The other request settings exist to preserve a realistic API shape.
@@ -83,7 +83,7 @@ A separate `DeviceMemory` wrapper assumes an independent memory pool.
 - `free(bytes_size)`: raises `RuntimeError` if more bytes are released than were reserved
 - `utilization()`: returns the current utilization in the range `0.0` to `1.0`
 
-If the Rust extension module `nano_llm_rs` is available, its implementation is used; otherwise the wrapper falls back to the Python implementation automatically.
+If the optional Rust extension module `nano_llm_rs` is available, its implementation is used; otherwise the wrapper falls back to the Python implementation automatically. The sample project remains fully runnable without the extension.
 
 ## Token Generation and Streaming
 

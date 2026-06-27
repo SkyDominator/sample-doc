@@ -6,9 +6,5 @@ class DeviceNotFoundError(NanoLLMError):
     """모의 하드웨어 환경 변수가 없을 때 발생합니다."""
 
 
-class ModelLoadError(NanoLLMError):
-    """모델 로드가 실패할 때 발생합니다."""
-
-
 class GenerationError(NanoLLMError):
     """로드되지 않은 엔진에서 생성 호출이 실행될 때 발생합니다."""
