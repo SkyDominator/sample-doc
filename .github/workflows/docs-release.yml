@@ -5,12 +5,27 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: read
+
 jobs:
   freeze-version:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
 
       - name: Resolve version
         id: version
@@ -20,14 +35,16 @@ jobs:
         run: |
           VERSION_DIR="docs/content/docs/[${{ steps.version.outputs.value }}]"
           mkdir -p "$VERSION_DIR"
+          cp docs/content/docs/index.mdx "$VERSION_DIR/" || true
+          cp docs/content/docs/index.en.mdx "$VERSION_DIR/" || true
           cp -r docs/content/docs/guides "$VERSION_DIR/" || true
           cp -r docs/content/docs/api "$VERSION_DIR/" || true
+          cp -r docs/content/docs/changes "$VERSION_DIR/" || true
           cp -r docs/content/docs/tutorials "$VERSION_DIR/" || true
           cp -r docs/content/docs/migration "$VERSION_DIR/" || true
           cp -r docs/content/docs/troubleshooting "$VERSION_DIR/" || true
 
       - name: Build docs
         run: |
-          corepack enable
-          pnpm --prefix docs install
+          pnpm --prefix docs install --frozen-lockfile
           pnpm --prefix docs build
