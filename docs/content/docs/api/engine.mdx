@@ -31,7 +31,7 @@ engine.unload()
 
 ## 생성자
 
-```python
+```text
 NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 ```
 
@@ -58,7 +58,7 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 
 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
 
-```python
+```text
 NanoLLMEngine.load_to_device(device_id=0) -> bool
 ```
 
@@ -99,7 +99,7 @@ except DeviceNotFoundError as exc:
 
 동기 mock 생성 요청을 실행합니다.
 
-```python
+```text
 NanoLLMEngine.generate(prompt, config=None) -> str
 ```
 
@@ -138,7 +138,7 @@ print(engine.generate("hello"))
 
 mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
 
-```python
+```text
 NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
 ```
 
@@ -181,7 +181,7 @@ for token in engine.generate_streaming(
 
 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
 
-```python
+```text
 NanoLLMEngine.get_device_memory() -> dict[str, int]
 ```
 
@@ -216,7 +216,7 @@ engine.unload()
 
 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
 
-```python
+```text
 NanoLLMEngine.unload() -> bool
 ```
 

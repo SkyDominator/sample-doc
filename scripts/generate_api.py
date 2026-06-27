@@ -927,7 +927,7 @@ def _parameter_table(parameters: list[ParameterDoc], language: str, label: str |
 
 
 def _signature_block(name: str, signature: str, annotation: str) -> str:
-    return "\n".join(["```python", f"{name}{signature} -> {annotation}", "```"])
+    return "\n".join(["```text", f"{name}{signature} -> {annotation}", "```"])
 
 
 def _render_example(example: ExampleDoc | None, language: str) -> str:
@@ -1004,7 +1004,7 @@ def _render_class_page(target: ApiTarget, page: PageDoc, language: str) -> str:
             "",
             f"## {strings['constructor']}",
             "",
-            "```python",
+            "```text",
             f"{page.subject.name}{page.constructor_signature}",
             "```",
             "",

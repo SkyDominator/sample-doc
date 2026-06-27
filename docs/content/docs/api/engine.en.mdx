@@ -31,7 +31,7 @@ engine.unload()
 
 ## Constructor
 
-```python
+```text
 NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 ```
 
@@ -58,7 +58,7 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 
 Open a mock device session and move the engine into a loaded state.
 
-```python
+```text
 NanoLLMEngine.load_to_device(device_id=0) -> bool
 ```
 
@@ -99,7 +99,7 @@ except DeviceNotFoundError as exc:
 
 Run a synchronous mock generation request.
 
-```python
+```text
 NanoLLMEngine.generate(prompt, config=None) -> str
 ```
 
@@ -141,7 +141,7 @@ print(out)
 
 Yield the mock generation result through a streaming interface.
 
-```python
+```text
 NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
 ```
 
@@ -185,7 +185,7 @@ for token in engine.generate_streaming(
 
 Return mock memory telemetry for the current engine state.
 
-```python
+```text
 NanoLLMEngine.get_device_memory() -> dict[str, int]
 ```
 
@@ -220,7 +220,7 @@ engine.unload()
 
 Close the mock device session and reset the engine state.
 
-```python
+```text
 NanoLLMEngine.unload() -> bool
 ```
 
