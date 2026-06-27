@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DocsToc } from "@/components/docs-toc";
 import {
   buildNavigationGroups,
-  DOCS_HOME_SLUGS,
   flattenNavigationGroups,
   getDocsHref,
   getSectionMeta,
@@ -37,10 +36,6 @@ export default async function DocsPage({ params }) {
   if (!locale) notFound();
 
   const slug = resolved.slug ?? [];
-  if (slug.length === 0) {
-    redirect(getDocsHref(locale, DOCS_HOME_SLUGS));
-  }
-
   const page = source.getPage(slug, locale);
   if (!page) notFound();
 
@@ -134,8 +129,6 @@ export async function generateMetadata({ params }) {
   if (!locale) return DEFAULT_METADATA;
 
   const slug = resolved.slug ?? [];
-  if (slug.length === 0) return DEFAULT_METADATA;
-
   const page = source.getPage(slug, locale);
   if (!page) return DEFAULT_METADATA;
 

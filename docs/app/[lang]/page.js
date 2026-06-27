@@ -1,10 +1,15 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
-import { DOCS_HOME_SLUGS, getDocsHref, isValidDocLocale } from "@/lib/docs";
+import { LandingPage } from "@/components/landing-page";
+import { isValidDocLocale } from "@/lib/docs";
 
 export default async function LocaleHomePage({ params }) {
   const resolved = await params;
   if (!isValidDocLocale(resolved.lang)) notFound();
 
-  redirect(getDocsHref(resolved.lang, DOCS_HOME_SLUGS));
+  return <LandingPage currentLocale={resolved.lang} />;
+}
+
+export function generateStaticParams() {
+  return [{ lang: "ko" }, { lang: "en" }];
 }

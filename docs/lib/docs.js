@@ -74,7 +74,7 @@ export function getLandingHref(locale) {
 
   return normalizedLocale === DEFAULT_DOC_LOCALE
     ? "/"
-    : `/?lang=${normalizedLocale}`;
+    : `/${normalizedLocale}`;
 }
 
 export function getSectionMeta(section) {

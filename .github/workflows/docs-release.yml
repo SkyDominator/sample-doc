@@ -1,19 +1,46 @@
 name: Docs Release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  workflow_run:
+    workflows: ["Docs CI"]
+    types:
+      - completed
+  workflow_dispatch:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-pages
+  cancel-in-progress: true
 
 jobs:
-  freeze-version:
+  build:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref_name == 'main') ||
+      (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve ref
+        id: ref
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "value=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.ref.outputs.value }}
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -27,24 +54,39 @@ jobs:
           cache: pnpm
           cache-dependency-path: docs/pnpm-lock.yaml
 
-      - name: Resolve version
-        id: version
-        run: echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-
-      - name: Freeze docs snapshot
-        run: |
-          VERSION_DIR="docs/content/docs/[${{ steps.version.outputs.value }}]"
-          mkdir -p "$VERSION_DIR"
-          cp docs/content/docs/index.mdx "$VERSION_DIR/" || true
-          cp docs/content/docs/index.en.mdx "$VERSION_DIR/" || true
-          cp -r docs/content/docs/guides "$VERSION_DIR/" || true
-          cp -r docs/content/docs/api "$VERSION_DIR/" || true
-          cp -r docs/content/docs/changes "$VERSION_DIR/" || true
-          cp -r docs/content/docs/tutorials "$VERSION_DIR/" || true
-          cp -r docs/content/docs/migration "$VERSION_DIR/" || true
-          cp -r docs/content/docs/troubleshooting "$VERSION_DIR/" || true
-
-      - name: Build docs
+      - name: Install docs dependencies
         run: |
           pnpm --prefix docs install --frozen-lockfile
+
+      - name: Build production docs export
+        env:
+          DOCS_STATIC_EXPORT: "true"
+          DOCS_BASE_PATH: ${{ vars.DOCS_BASE_PATH }}
+        run: |
+          if [[ -z "$DOCS_BASE_PATH" ]]; then
+            DOCS_BASE_PATH="/${GITHUB_REPOSITORY#*/}"
+          fi
+          echo "Using DOCS_BASE_PATH=$DOCS_BASE_PATH"
+          export DOCS_BASE_PATH
           pnpm --prefix docs build
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/out
+
+  deploy:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref_name == 'main') ||
+      (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main')
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
