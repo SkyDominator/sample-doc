@@ -18,7 +18,7 @@ pip install -e ./sdk
 
 ## 2. 최소 실행 예제
 
-아래 코드는 엔진 생성, 장치 로드, 단건 생성, 언로드까지의 기본 흐름을 보여줍니다.
+아래 코드는 엔진 생성, 장치 로드, 단건 생성 요청까지의 기본 흐름을 보여줍니다.
 
 ```python
 import os
@@ -41,9 +41,9 @@ result = engine.generate(
 )
 
 print(result)
-
-engine.unload()
 ```
+
+세션을 종료할 때는 `engine.unload()`를 호출합니다.
 
 ## 3. 스트리밍 추론 예제
 
@@ -59,7 +59,7 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
 engine.load_to_device()
 
 stream = engine.generate_streaming(
-	"스트리밍 출력이 동기 생성 결과와 어떤 관계인지 설명해줘.",
+	"스트리밍 출력이 어떤 설정으로 생성됐는지 요약해줘",
 	InferenceConfig(max_tokens=24, temperature=0.0),
 )
 for token in stream:

@@ -6,11 +6,11 @@ QuantizationType = Literal["INT4", "INT8", "FP16", "FP32"]
 
 @dataclass(slots=True)
 class KVCacheConfig:
-    """Configuration for KV cache behavior attached to the engine.
+    """엔진에 부착되는 KV cache 설정 객체입니다.
 
     Args:
-        max_seq_len: Maximum sequence length assumed for cache allocation.
-        cache_dtype: Precision label used for KV cache storage.
+        max_seq_len: cache 할당이 감당한다고 가정하는 최대 시퀀스 길이입니다.
+        cache_dtype: KV cache 저장 정밀도 라벨입니다.
     """
 
     max_seq_len: int = 4096
@@ -19,12 +19,12 @@ class KVCacheConfig:
 
 @dataclass(slots=True)
 class InferenceConfig:
-    """Per-request inference settings for mock generation.
+    """mock 생성 요청마다 전달하는 설정 객체입니다.
 
     Args:
-        batch_size: Number of prompts processed in one mock request.
-        max_tokens: Maximum token budget reflected in the mock output prefix.
-        temperature: Sampling temperature placeholder preserved across examples and tests.
+        batch_size: 한 번의 mock 요청에서 함께 처리할 프롬프트 수입니다.
+        max_tokens: 출력 접두사에 반영되는 최대 토큰 예산입니다.
+        temperature: 샘플링 다양성을 나타내는 자리표시 값입니다.
     """
 
     batch_size: int = 1

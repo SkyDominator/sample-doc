@@ -32,11 +32,20 @@ This version fixes the mock output format so you can see immediately which confi
 ## Example
 
 ```python
-from nano_llm import InferenceConfig
+import os
+
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine.load_to_device(0)
 
 out = engine.generate("status", InferenceConfig(max_tokens=32))
 tokens = list(engine.generate_streaming("status", InferenceConfig(max_tokens=32)))
 
 print(out)
 print(tokens)
+
+engine.unload()
 ```

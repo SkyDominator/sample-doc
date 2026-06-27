@@ -1,14 +1,14 @@
 class NanoLLMError(Exception):
-    """Base exception for nano_llm package."""
+    """nano_llm 패키지의 기본 예외입니다."""
 
 
 class DeviceNotFoundError(NanoLLMError):
-    """Raised when mock hardware is unavailable."""
+    """모의 하드웨어 환경 변수가 없을 때 발생합니다."""
 
 
 class ModelLoadError(NanoLLMError):
-    """Raised when model loading fails."""
+    """모델 로드가 실패할 때 발생합니다."""
 
 
 class GenerationError(NanoLLMError):
-    """Raised when generation fails."""
+    """로드되지 않은 엔진에서 생성 호출이 실행될 때 발생합니다."""

@@ -27,11 +27,20 @@ engine.load_to_device(device_id=0)
 ## 2) Run a Single Generation Request
 
 ```python
-from nano_llm import InferenceConfig
+import os
+
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine.load_to_device(device_id=0)
 
 cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
 out = engine.generate("Explain how the INT8 setting is displayed in the output string.", cfg)
 print(out)
+
+engine.unload()
 ```
 
 `generate()` adds the `[mock:{quantization}:tokens={max_tokens}]` prefix so part of the current engine and request configuration is visible directly in the returned string.
@@ -39,13 +48,22 @@ print(out)
 ## 3) Run a Streaming Request
 
 ```python
-from nano_llm import InferenceConfig
+import os
+
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine.load_to_device(device_id=0)
 
 for token in engine.generate_streaming(
     "Summarize the relationship between batched inference and latency.",
     InferenceConfig(max_tokens=40, temperature=0.1),
 ):
     print(token)
+
+engine.unload()
 ```
 
 `generate_streaming()` reuses the internal result from `generate()`, so joining the tokens back together yields the same payload as the synchronous call.
@@ -53,8 +71,20 @@ for token in engine.generate_streaming(
 ## 4) Check Memory Telemetry
 
 ```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+print(engine.get_device_memory())
+
+engine.load_to_device(0)
 stats = engine.get_device_memory()
 print(stats["total_mb"], stats["used_mb"])
+
+engine.unload()
 ```
 
 `get_device_memory()` reads the mock memory state currently held by the engine. Before load, `used_mb` is `0`; after load, it is `1024`.
@@ -94,6 +124,14 @@ except DeviceNotFoundError as exc:
 ## 7) Shutdown
 
 ```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine.load_to_device(0)
 engine.unload()
 ```
 

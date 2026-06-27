@@ -1,4 +1,4 @@
-"""Python wrapper for optional Rust-backed device memory helper."""
+"""Rust 구현이 있으면 이를 사용하고, 없으면 Python 구현으로 폴백하는 장치 메모리 래퍼입니다."""
 
 from __future__ import annotations
 
@@ -32,10 +32,10 @@ except Exception:
 
 
 class DeviceMemory:
-    """Device memory abstraction backed by Rust when available.
+    """독립적인 메모리 풀을 가정하는 장치 메모리 추상화입니다.
 
     Args:
-        total_bytes: Total device memory capacity exposed by the wrapper.
+        total_bytes: 래퍼가 노출할 전체 장치 메모리 용량입니다.
     """
 
     def __init__(self, total_bytes: int) -> None:
@@ -43,31 +43,31 @@ class DeviceMemory:
         self._impl = impl(total_bytes)
 
     def allocate(self, bytes_size: int) -> bool:
-        """Reserve bytes from the device memory pool.
+        """장치 메모리 풀에서 바이트를 예약합니다.
 
         Args:
-            bytes_size: Number of bytes to reserve.
+            bytes_size: 예약할 바이트 수입니다.
 
         Returns:
-            True when the allocation succeeds, otherwise False.
+            예약에 성공하면 `True`, 용량이 부족하면 `False`를 반환합니다.
         """
         return self._impl.allocate(bytes_size)
 
     def free(self, bytes_size: int) -> None:
-        """Release previously reserved bytes.
+        """이전에 예약한 바이트를 해제합니다.
 
         Args:
-            bytes_size: Number of bytes to release.
+            bytes_size: 해제할 바이트 수입니다.
 
         Raises:
-            RuntimeError: If the requested free size exceeds the allocated size.
+            RuntimeError: 현재 예약량보다 더 큰 바이트 수를 해제하려고 하면 발생합니다.
         """
         self._impl.free(bytes_size)
 
     def utilization(self) -> float:
-        """Return the current memory utilization ratio.
+        """현재 메모리 사용률을 반환합니다.
 
         Returns:
-            Fraction of used memory in the range 0.0 to 1.0.
+            `0.0`~`1.0` 범위의 사용률을 반환합니다.
         """
         return float(self._impl.utilization())

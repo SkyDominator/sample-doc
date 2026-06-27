@@ -25,11 +25,11 @@ This update refines the state transition rules for `NanoLLMEngine` so the sessio
 ```python
 import os
 
-from nano_llm import NanoLLMEngine
+from nano_llm import NanoLLMEngine as Engine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = Engine(model_path="models/mock-llm.bin")
 print(engine.is_loaded, engine.get_device_memory())
 
 engine.load_to_device(0)

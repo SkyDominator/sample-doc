@@ -101,12 +101,12 @@ print(engine.generate("status", InferenceConfig(max_tokens=32)))
 ```python
 import os
 
-from nano_llm import NanoLLMEngine
+from nano_llm import NanoLLMEngine as Engine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-engine = NanoLLMEngine(model_path="models/mock.bin")
-print(engine.get_device_memory())
+engine = Engine(model_path="models/mock.bin")
+print(engine.is_loaded)
 
 engine.load_to_device(0)
 print(engine.get_device_memory())
@@ -123,9 +123,18 @@ print(engine.get_device_memory())
 해결:
 
 ```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock.bin")
+engine.load_to_device(0)
+
 tokens = list(engine.generate_streaming("stream test"))
 print(tokens)
-print(" ".join(tokens))
+print(engine.generate("stream test"))
 ```
 
 전체 문자열이 필요하면 `generate()`를 직접 호출하고, 스트리밍 경로를 검사할 때는 공백 단위 분해라는 현재 계약을 기준으로 확인합니다.

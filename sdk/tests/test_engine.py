@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from nano_llm import DeviceMemory, InferenceConfig, NanoLLMEngine
+from nano_llm import DeviceMemory, InferenceConfig, KVCacheConfig, NanoLLMEngine
 from nano_llm.errors import DeviceNotFoundError, GenerationError
 
 
@@ -11,7 +11,7 @@ def test_load_and_generate() -> None:
 
     assert engine.load_to_device(0)
     out = engine.generate("hello", InferenceConfig(max_tokens=8))
-    assert "hello" in out
+    assert out == "[mock:FP16:tokens=8] hello"
 
 
 def test_unload() -> None:
@@ -23,13 +23,13 @@ def test_unload() -> None:
 def test_load_requires_mock_env() -> None:
     os.environ.pop("MOCK_RNGD_HARDWARE", None)
     engine = NanoLLMEngine(model_path="models/mock.bin")
-    with pytest.raises(DeviceNotFoundError):
+    with pytest.raises(DeviceNotFoundError, match="mock hardware not found"):
         engine.load_to_device(0)
 
 
 def test_generate_requires_loaded_engine() -> None:
     engine = NanoLLMEngine(model_path="models/mock.bin")
-    with pytest.raises(GenerationError):
+    with pytest.raises(GenerationError, match="engine is not loaded"):
         engine.generate("hello")
 
 
@@ -37,18 +37,32 @@ def test_streaming_generation() -> None:
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
     engine = NanoLLMEngine(model_path="models/mock.bin")
     engine.load_to_device(0)
-    tokens = list(engine.generate_streaming("stream test", InferenceConfig(max_tokens=6)))
-    assert len(tokens) > 0
+    config = InferenceConfig(max_tokens=6)
+    output = engine.generate("stream test", config)
+    tokens = list(engine.generate_streaming("stream test", config))
+    assert tokens == output.split()
 
 
 def test_device_memory_stats() -> None:
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
     engine = NanoLLMEngine(model_path="models/mock.bin")
     before = engine.get_device_memory()
-    assert before["used_mb"] == 0
+    assert before == {"total_mb": 32768, "used_mb": 0}
     engine.load_to_device(0)
     after = engine.get_device_memory()
-    assert after["used_mb"] > 0
+    assert after == {"total_mb": 32768, "used_mb": 1024}
+
+
+def test_engine_preserves_engine_level_config() -> None:
+    cache_config = KVCacheConfig(max_seq_len=8192, cache_dtype="fp16")
+    engine = NanoLLMEngine(
+        model_path="models/mock.bin",
+        quantization="INT8",
+        kv_cache_config=cache_config,
+    )
+
+    assert engine.quantization == "INT8"
+    assert engine.kv_cache_config is cache_config
 
 
 def test_device_memory_wrapper() -> None:

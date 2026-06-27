@@ -27,11 +27,20 @@ engine.load_to_device(device_id=0)
 ## 2) 단건 생성 요청
 
 ```python
-from nano_llm import InferenceConfig
+import os
+
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine.load_to_device(device_id=0)
 
 cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("INT8 설정이 결과 문자열에 어떻게 표시되는지 설명해줘", cfg)
+out = engine.generate("INT8 설정이 메모리 사용량 표기에 어떤 의미를 갖는지 설명해줘", cfg)
 print(out)
+
+engine.unload()
 ```
 
 `generate()`는 `[mock:{quantization}:tokens={max_tokens}]` 접두사를 붙여 현재 엔진/요청 설정 중 일부를 결과 문자열에서 바로 확인하게 합니다.
@@ -39,13 +48,22 @@ print(out)
 ## 3) 스트리밍 요청
 
 ```python
-from nano_llm import InferenceConfig
+import os
+
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine.load_to_device(device_id=0)
 
 for token in engine.generate_streaming(
-    "배치 추론과 지연 시간의 관계를 요약해줘",
+	"배치 추론 설정이 스트리밍 출력에 어떻게 반영되는지 설명해줘",
     InferenceConfig(max_tokens=40, temperature=0.1),
 ):
     print(token)
+
+engine.unload()
 ```
 
 `generate_streaming()`은 내부에서 `generate()` 결과를 재사용하므로, 토큰을 다시 이어 붙이면 동기 호출과 같은 payload를 얻습니다.
@@ -53,8 +71,20 @@ for token in engine.generate_streaming(
 ## 4) 메모리 텔레메트리 확인
 
 ```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+print(engine.get_device_memory())
+
+engine.load_to_device(0)
 stats = engine.get_device_memory()
 print(stats["total_mb"], stats["used_mb"])
+
+engine.unload()
 ```
 
 `get_device_memory()`는 엔진이 현재 점유 중인 mock 메모리 상태를 읽습니다. 로드 전에는 `used_mb`가 `0`, 로드 후에는 `1024`입니다.
@@ -94,6 +124,14 @@ except DeviceNotFoundError as exc:
 ## 7) 종료
 
 ```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine.load_to_device(0)
 engine.unload()
 ```
 

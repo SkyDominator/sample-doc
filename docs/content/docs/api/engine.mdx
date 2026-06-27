@@ -15,18 +15,16 @@ description: "NanoLLMEngine 클래스와 관련 설정 타입"
 ```python
 import os
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
-engine.load_to_device()
 
-stream = engine.generate_streaming(
-	"스트리밍 출력이 어떤 설정으로 생성됐는지 요약해줘",
-	InferenceConfig(max_tokens=24, temperature=0.0),
-)
-for token in stream:
-	print(token)
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+print(engine.get_device_memory())
+
+engine.load_to_device(0)
+stats = engine.get_device_memory()
+print(stats["total_mb"], stats["used_mb"])
 
 engine.unload()
 ```
@@ -43,16 +41,16 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 | :-- | :-- | :-- | :-- |
 | `model_path` | `str` | - | 컴파일된 mock 모델 아티팩트 경로입니다. |
 | `quantization` | `QuantizationType` | `'FP16'` | 생성 결과 접두사에 반영되는 양자화 라벨입니다. |
-| `kv_cache_config` | `KVCacheConfig \| None` | `None` | 엔진 인스턴스에 보관할 KV cache 설정 객체입니다. |
+| `kv_cache_config` | `KVCacheConfig | None` | `None` | 엔진 인스턴스에 보관할 KV cache 설정 객체입니다. |
 
 ## 사용 순서
 
 1. `NanoLLMEngine(...)`로 인스턴스를 생성합니다.
-2. `load_to_device()`로 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
-3. `generate()`로 동기 생성 요청을 실행합니다.
-4. `generate_streaming()`으로 같은 생성 결과를 스트리밍 소비 방식으로 받습니다.
-5. `get_device_memory()`로 현재 세션의 mock 메모리 상태를 확인합니다.
-6. `unload()`로 세션을 종료하고 로드 상태를 초기화합니다.
+2. `load_to_device()` - 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
+3. `generate()` - 동기 mock 생성 요청을 실행합니다.
+4. `generate_streaming()` - mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
+5. `get_device_memory()` - 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
+6. `unload()` - 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
 
 ## 메서드
 
@@ -110,7 +108,7 @@ NanoLLMEngine.generate(prompt, config=None) -> str
 | 매개변수 | 타입 | 기본값 | 설명 |
 | :-- | :-- | :-- | :-- |
 | `prompt` | `str` | - | 입력 프롬프트 문자열입니다. |
-| `config` | `InferenceConfig \| None` | `None` | 토큰 예산과 샘플링 제어를 담은 요청 설정입니다. |
+| `config` | `InferenceConfig | None` | `None` | 토큰 예산과 샘플링 제어를 담은 요청 설정입니다. |
 
 #### 반환값
 
@@ -125,11 +123,15 @@ NanoLLMEngine.generate(prompt, config=None) -> str
 #### 예제
 
 ```python
-from nano_llm import InferenceConfig
+import os
 
-cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("INT8 설정이 메모리 사용량 표기에 어떤 의미를 갖는지 설명해줘", cfg)
-print(out)
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine.load_to_device(0)
+print(engine.generate("hello"))
 ```
 
 ### `generate_streaming(prompt, config=None)`
@@ -145,7 +147,7 @@ NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, No
 | 매개변수 | 타입 | 기본값 | 설명 |
 | :-- | :-- | :-- | :-- |
 | `prompt` | `str` | - | 입력 프롬프트 문자열입니다. |
-| `config` | `InferenceConfig \| None` | `None` | 토큰 예산과 샘플링 제어를 담은 요청 설정입니다. |
+| `config` | `InferenceConfig | None` | `None` | 토큰 예산과 샘플링 제어를 담은 요청 설정입니다. |
 
 #### 생성값
 
@@ -160,10 +162,16 @@ NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, No
 #### 예제
 
 ```python
-from nano_llm import InferenceConfig
+import os
+
+from nano_llm import InferenceConfig, NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine.load_to_device()
 
 for token in engine.generate_streaming(
-	"배치 추론 설정이 스트리밍 출력에 어떻게 반영되는지 설명해줘",
+    "INT8 설정에서 토큰 예산이 출력 형식에 어떻게 반영되는지 설명해줘",
     InferenceConfig(max_tokens=40, temperature=0.1),
 ):
     print(token)
@@ -188,8 +196,20 @@ NanoLLMEngine.get_device_memory() -> dict[str, int]
 #### 예제
 
 ```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+print(engine.get_device_memory())
+
+engine.load_to_device(0)
 stats = engine.get_device_memory()
 print(stats["total_mb"], stats["used_mb"])
+
+engine.unload()
 ```
 
 ### `unload()`
@@ -211,6 +231,14 @@ NanoLLMEngine.unload() -> bool
 #### 예제
 
 ```python
+import os
+
+from nano_llm import NanoLLMEngine
+
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine.load_to_device(0)
 engine.unload()
 ```
 
@@ -255,5 +283,7 @@ mock 생성 요청마다 전달하는 설정 객체입니다.
 
 ## 함께 보기
 
-- [빠른 시작](../guides/quickstart)
-- [추론 파이프라인 튜토리얼](../tutorials/inference-pipeline)
+- [v1 to v2 마이그레이션](/ko/docs/migration/v1-to-v2)
+- [빠른 시작](/ko/docs/guides/quickstart)
+- [추론 파이프라인 튜토리얼](/ko/docs/tutorials/inference-pipeline)
+- [핵심 개념](/ko/docs/guides/concepts)
