@@ -5,7 +5,18 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "@/lib/utils";
 
-const Tabs = TabsPrimitive.Root;
+const Tabs = React.forwardRef(({ className, ...props }, ref) => (
+  <TabsPrimitive.Root
+    ref={ref}
+    className={cn(
+      "my-6 rounded-[2rem] border border-slate-200/80 bg-slate-50/85 p-3 shadow-soft",
+      className
+    )}
+    {...props}
+  />
+));
+
+Tabs.displayName = TabsPrimitive.Root.displayName;
 
 const TabsList = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.List
@@ -36,7 +47,10 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 const TabsContent = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
-    className={cn("mt-4 outline-none", className)}
+    className={cn(
+      "mt-3 rounded-[1.75rem] border border-slate-200/90 bg-white px-6 py-5 shadow-soft outline-none",
+      className
+    )}
     {...props}
   />
 ));
