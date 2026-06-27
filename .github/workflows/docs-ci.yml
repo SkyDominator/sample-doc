@@ -75,7 +75,7 @@ jobs:
           pnpm --prefix docs build
 
       - name: Link check
-        uses: lycheeverse/lychee-action@v1.9.0
+        uses: lycheeverse/lychee-action@v2.8.0
         with:
           fail: true
           args: >-
