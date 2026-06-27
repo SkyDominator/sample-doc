@@ -242,8 +242,9 @@ def _parse_args() -> Namespace:
     parser.add_argument(
         "--languages",
         nargs="+",
-        default=["ko", "en"],
-        help="Languages to generate. Defaults to ko en.",
+        choices=["ko"],
+        default=["ko"],
+        help="Languages to generate. Only Korean API pages are generated.",
     )
     return parser.parse_args()
 
@@ -396,14 +397,13 @@ def _explicit_targets(config: GeneratorConfig) -> list[ApiTarget]:
         module_name, symbol_name, slug = _parse_target_spec(spec, config.package_name)
         relative_slug = slug or _default_slug_for_target(module_name, symbol_name, config.package_name)
         ko_path = config.api_root / f"{relative_slug}.mdx"
-        en_path = config.api_root / f"{relative_slug}.en.mdx"
         targets.append(
             ApiTarget(
                 module_name=module_name,
                 symbol_name=symbol_name,
                 slug=relative_slug,
-                output_paths={"ko": ko_path, "en": en_path},
-                frontmatter={"ko": _parse_frontmatter(ko_path), "en": _parse_frontmatter(en_path)},
+                output_paths={"ko": ko_path},
+                frontmatter={"ko": _parse_frontmatter(ko_path)},
             )
         )
     return targets
@@ -419,9 +419,8 @@ def _targets_from_existing_docs(config: GeneratorConfig) -> list[ApiTarget]:
             continue
 
         relative_slug = ko_path.relative_to(config.api_root).as_posix().removesuffix(".mdx")
-        en_path = ko_path.with_name(f"{ko_path.stem}.en.mdx")
-        frontmatter = {"ko": _parse_frontmatter(ko_path), "en": _parse_frontmatter(en_path)}
-        target_spec = frontmatter["ko"].api_target or frontmatter["en"].api_target
+        frontmatter = {"ko": _parse_frontmatter(ko_path)}
+        target_spec = frontmatter["ko"].api_target
 
         if target_spec:
             module_name, symbol_name, _ = _parse_target_spec(target_spec, config.package_name)
@@ -434,7 +433,7 @@ def _targets_from_existing_docs(config: GeneratorConfig) -> list[ApiTarget]:
                 module_name=module_name,
                 symbol_name=symbol_name,
                 slug=relative_slug,
-                output_paths={"ko": ko_path, "en": en_path},
+                output_paths={"ko": ko_path},
                 frontmatter=frontmatter,
             )
         )
@@ -1121,8 +1120,8 @@ def _auto_discover_targets(context: PackageContext) -> list[ApiTarget]:
             module_name=module_name,
             symbol_name=None,
             slug=slug,
-            output_paths={"ko": context.config.api_root / f"{slug}.mdx", "en": context.config.api_root / f"{slug}.en.mdx"},
-            frontmatter={"ko": FrontmatterInfo(), "en": FrontmatterInfo()},
+            output_paths={"ko": context.config.api_root / f"{slug}.mdx"},
+            frontmatter={"ko": FrontmatterInfo()},
         )
         try:
             _select_subject(target, context)

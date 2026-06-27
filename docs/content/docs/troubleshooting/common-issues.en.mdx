@@ -134,7 +134,7 @@ engine.load_to_device(0)
 
 tokens = list(engine.generate_streaming("stream test"))
 print(tokens)
-print(" ".join(tokens))
+print(engine.generate("stream test"))
 ```
 
 If you need the full string, call `generate()` directly. When checking the streaming path, validate it against the current contract of whitespace-based splitting.

@@ -18,7 +18,7 @@ pip install -e ./sdk
 
 ## 2. Minimal Run Example
 
-The example below shows the basic flow from engine creation through device load, single generation, and unload.
+The example below shows the basic flow from engine creation through device load and a single generation request.
 
 ```python
 import os
@@ -36,14 +36,14 @@ engine = NanoLLMEngine(
 engine.load_to_device(device_id=0)
 
 result = engine.generate(
-    prompt="Explain how the INT8 setting and token budget appear in the output string.",
+	prompt="Explain how the INT8 setting and token budget appear in the output string.",
     config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
 )
 
 print(result)
-
-engine.unload()
 ```
+
+Call `engine.unload()` when you are ready to close the session.
 
 ## 3. Streaming Inference Example
 
@@ -59,7 +59,7 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
 engine.load_to_device()
 
 stream = engine.generate_streaming(
-    "Explain how streaming output relates to the synchronous generation result.",
+	"Summarize which settings the streaming output was generated from.",
     InferenceConfig(max_tokens=24, temperature=0.0),
 )
 for token in stream:
@@ -91,5 +91,5 @@ except DeviceNotFoundError as exc:
 
 - [Core Concepts](./concepts)
 - [API Reference](../api/engine)
-- [Inference Pipeline](../tutorials/inference-pipeline)
+- [Inference Pipeline Tutorial](../tutorials/inference-pipeline)
 - [Troubleshooting](../troubleshooting/common-issues)

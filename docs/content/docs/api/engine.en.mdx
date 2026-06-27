@@ -5,8 +5,8 @@ description: "The NanoLLMEngine class and related configuration types"
 
 # NanoLLMEngine
 
-`NanoLLMEngine`는 RNGD 장치 수명주기를 흉내 내는 모의 추론 엔진입니다.
-인스턴스 생성, 장치 로드, 동기/스트리밍 생성, 메모리 조회, 세션 해제까지의 기본 흐름을 제공합니다.
+`NanoLLMEngine` is a mock inference engine that imitates the RNGD device lifecycle.
+It provides the basic flow from instance creation through device load, synchronous and streaming generation, memory queries, and session shutdown.
 
 ## Quickstart
 
@@ -39,24 +39,24 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 
 | Parameter | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
-| `model_path` | `str` | - | 컴파일된 mock 모델 아티팩트 경로입니다. |
-| `quantization` | `QuantizationType` | `'FP16'` | 생성 결과 접두사에 반영되는 양자화 라벨입니다. |
-| `kv_cache_config` | `KVCacheConfig | None` | `None` | 엔진 인스턴스에 보관할 KV cache 설정 객체입니다. |
+| `model_path` | `str` | - | Path to the compiled mock model artifact. |
+| `quantization` | `QuantizationType` | `'FP16'` | Quantization label reflected in the generation output prefix. |
+| `kv_cache_config` | `KVCacheConfig | None` | `None` | KV cache configuration object stored on the engine instance. |
 
 ## Typical workflow
 
 1. Create the instance with `NanoLLMEngine(...)`.
-2. `load_to_device()` - 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
-3. `generate()` - 동기 mock 생성 요청을 실행합니다.
-4. `generate_streaming()` - mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
-5. `get_device_memory()` - 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
-6. `unload()` - 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
+2. `load_to_device()` - Open a mock device session and move the engine into a loaded state.
+3. `generate()` - Run a synchronous mock generation request.
+4. `generate_streaming()` - Yield the mock generation result through a streaming interface.
+5. `get_device_memory()` - Return mock memory telemetry for the current engine state.
+6. `unload()` - Close the mock device session and reset the engine state.
 
 ## Methods
 
 ### `load_to_device(device_id=0)`
 
-모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
+Open a mock device session and move the engine into a loaded state.
 
 ```python
 NanoLLMEngine.load_to_device(device_id=0) -> bool
@@ -66,17 +66,17 @@ NanoLLMEngine.load_to_device(device_id=0) -> bool
 
 | Parameter | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
-| `device_id` | `int` | `0` | 모의 하드웨어 장치 인덱스입니다. |
+| `device_id` | `int` | `0` | Mock hardware device index. |
 
 #### Returns
 
-모의 장치 세션이 준비되면 `True`를 반환합니다.
+Returns `True` when the mock device session is ready.
 
 #### Raises
 
 | Error | When |
 | :-- | :-- |
-| `DeviceNotFoundError` | `MOCK_RNGD_HARDWARE` 환경 변수가 없으면 발생합니다. |
+| `DeviceNotFoundError` | Raised if `MOCK_RNGD_HARDWARE` is not set. |
 
 #### Example
 
@@ -97,7 +97,7 @@ except DeviceNotFoundError as exc:
 
 ### `generate(prompt, config=None)`
 
-동기 mock 생성 요청을 실행합니다.
+Run a synchronous mock generation request.
 
 ```python
 NanoLLMEngine.generate(prompt, config=None) -> str
@@ -107,36 +107,39 @@ NanoLLMEngine.generate(prompt, config=None) -> str
 
 | Parameter | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
-| `prompt` | `str` | - | 입력 프롬프트 문자열입니다. |
-| `config` | `InferenceConfig | None` | `None` | 토큰 예산과 샘플링 제어를 담은 요청 설정입니다. |
+| `prompt` | `str` | - | Input prompt text. |
+| `config` | `InferenceConfig | None` | `None` | Request configuration containing token budget and sampling controls. |
 
 #### Returns
 
-양자화 라벨과 토큰 예산 메타데이터를 앞에 붙인 mock 출력 문자열을 반환합니다.
+Returns a mock output string prefixed with quantization and token-budget metadata.
 
 #### Raises
 
 | Error | When |
 | :-- | :-- |
-| `GenerationError` | 엔진이 아직 로드되지 않은 상태에서 호출하면 발생합니다. |
+| `GenerationError` | Raised when the engine has not been loaded yet. |
 
 #### Example
 
 ```python
 import os
 
-from nano_llm import NanoLLMEngine
+from nano_llm import InferenceConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
-print(engine.generate("hello"))
+
+cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
+out = engine.generate("Explain what the INT8 setting means for the memory-usage label.", cfg)
+print(out)
 ```
 
 ### `generate_streaming(prompt, config=None)`
 
-mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
+Yield the mock generation result through a streaming interface.
 
 ```python
 NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
@@ -146,39 +149,41 @@ NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, No
 
 | Parameter | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
-| `prompt` | `str` | - | 입력 프롬프트 문자열입니다. |
-| `config` | `InferenceConfig | None` | `None` | 토큰 예산과 샘플링 제어를 담은 요청 설정입니다. |
+| `prompt` | `str` | - | Input prompt text. |
+| `config` | `InferenceConfig | None` | `None` | Request configuration containing token budget and sampling controls. |
 
 #### Yields
 
-동기 생성 결과를 공백 기준으로 분리한 토큰들을 순서대로 생성합니다.
+Yields tokens in order by splitting the synchronous generation result on whitespace.
 
 #### Raises
 
 | Error | When |
 | :-- | :-- |
-| `GenerationError` | 엔진 로드 전에 내부 생성 요청이 실행되면 발생합니다. |
+| `GenerationError` | Raised when the internal generation request runs before the engine is loaded. |
 
 #### Example
 
 ```python
 import os
 
-from nano_llm import NanoLLMEngine
+from nano_llm import InferenceConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-engine = NanoLLMEngine(model_path="models/mock.bin")
-engine.load_to_device(0)
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine.load_to_device()
 
-tokens = list(engine.generate_streaming("stream test"))
-print(tokens)
-print(" ".join(tokens))
+for token in engine.generate_streaming(
+	"Explain how the token budget is reflected in the output format under the INT8 setting.",
+	InferenceConfig(max_tokens=40, temperature=0.1),
+):
+	print(token)
 ```
 
 ### `get_device_memory()`
 
-현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
+Return mock memory telemetry for the current engine state.
 
 ```python
 NanoLLMEngine.get_device_memory() -> dict[str, int]
@@ -190,30 +195,30 @@ No parameters.
 
 #### Returns
 
-`total_mb`와 `used_mb` 키를 가진 사전을 반환합니다.
+Returns a dictionary containing the `total_mb` and `used_mb` keys.
 
 #### Example
 
 ```python
 import os
 
-from nano_llm import NanoLLMEngine as Engine
+from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-engine = Engine(model_path="models/mock-llm.bin")
-print(engine.is_loaded, engine.get_device_memory())
+engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+print(engine.get_device_memory())
 
 engine.load_to_device(0)
-print(engine.is_loaded, engine.get_device_memory())
+stats = engine.get_device_memory()
+print(stats["total_mb"], stats["used_mb"])
 
 engine.unload()
-print(engine.is_loaded, engine.get_device_memory())
 ```
 
 ### `unload()`
 
-모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
+Close the mock device session and reset the engine state.
 
 ```python
 NanoLLMEngine.unload() -> bool
@@ -225,7 +230,7 @@ No parameters.
 
 #### Returns
 
-로드 상태가 해제되면 `True`를 반환합니다.
+Returns `True` when the loaded state has been cleared.
 
 #### Example
 
@@ -245,22 +250,22 @@ engine.unload()
 
 ### `InferenceConfig`
 
-mock 생성 요청마다 전달하는 설정 객체입니다.
+Configuration object passed to each mock generation request.
 
 | Field | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
-| `batch_size` | `int` | `1` | 한 번의 mock 요청에서 함께 처리할 프롬프트 수입니다. |
-| `max_tokens` | `int` | `128` | 출력 접두사에 반영되는 최대 토큰 예산입니다. |
-| `temperature` | `float` | `0.7` | 샘플링 다양성을 나타내는 자리표시 값입니다. |
+| `batch_size` | `int` | `1` | Number of prompts processed together in one mock request. |
+| `max_tokens` | `int` | `128` | Maximum token budget reflected in the output prefix. |
+| `temperature` | `float` | `0.7` | Placeholder value representing sampling diversity. |
 
 ### `KVCacheConfig`
 
-엔진에 부착되는 KV cache 설정 객체입니다.
+KV cache configuration object attached to the engine.
 
 | Field | Type | Default | Description |
 | :-- | :-- | :-- | :-- |
-| `max_seq_len` | `int` | `4096` | cache 할당이 감당한다고 가정하는 최대 시퀀스 길이입니다. |
-| `cache_dtype` | `str` | `'fp16'` | KV cache 저장 정밀도 라벨입니다. |
+| `max_seq_len` | `int` | `4096` | Maximum sequence length the cache allocation is assumed to support. |
+| `cache_dtype` | `str` | `'fp16'` | Precision label for KV cache storage. |
 
 ### `QuantizationType`
 
@@ -277,13 +282,12 @@ Supported literal values.
 
 | Error | Raised by | Description |
 | :-- | :-- | :-- |
-| `DeviceNotFoundError` | `load_to_device()` | 모의 하드웨어 환경 변수가 없을 때 발생합니다. |
-| `GenerationError` | `generate()`, `generate_streaming()` | 로드되지 않은 엔진에서 생성 호출이 실행될 때 발생합니다. |
+| `DeviceNotFoundError` | `load_to_device()` | Raised when the mock hardware environment variable is missing. |
+| `GenerationError` | `generate()`, `generate_streaming()` | Raised when generation is called on an engine that has not been loaded. |
 
 ## See also
 
-- [Common Issues](/en/docs/troubleshooting/common-issues)
-- [Inference Pipeline Tutorial](/en/docs/tutorials/inference-pipeline)
+- [Migration from v1 to v2](/en/docs/migration/v1-to-v2)
 - [Quickstart](/en/docs/guides/quickstart)
-- [Session state and memory telemetry](/en/docs/changes/sidebar-and-shell)
-- [v1 to v2 Migration](/en/docs/migration/v1-to-v2)
+- [Inference Pipeline Tutorial](/en/docs/tutorials/inference-pipeline)
+- [Core Concepts](/en/docs/guides/concepts)

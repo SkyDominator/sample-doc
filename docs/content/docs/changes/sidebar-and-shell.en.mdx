@@ -30,11 +30,11 @@ from nano_llm import NanoLLMEngine as Engine
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
 engine = Engine(model_path="models/mock-llm.bin")
-print(engine.is_loaded, engine.get_device_memory())
+print(engine.is_loaded)
 
 engine.load_to_device(0)
 print(engine.is_loaded, engine.get_device_memory())
 
 engine.unload()
-print(engine.is_loaded, engine.get_device_memory())
+print(engine.is_loaded)
 ```

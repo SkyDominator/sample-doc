@@ -37,7 +37,7 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device(device_id=0)
 
 cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("Explain how the INT8 setting is displayed in the output string.", cfg)
+out = engine.generate("Explain what the INT8 setting means for the memory-usage label.", cfg)
 print(out)
 
 engine.unload()
@@ -58,7 +58,7 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device(device_id=0)
 
 for token in engine.generate_streaming(
-    "Summarize the relationship between batched inference and latency.",
+	"Explain how batched inference settings are reflected in streaming output.",
     InferenceConfig(max_tokens=40, temperature=0.1),
 ):
     print(token)
