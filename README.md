@@ -28,10 +28,27 @@ The workflow mirrors fast-moving SDK teams by validating examples in CI, auto-ge
 - pnpm 9+
 - Rust toolchain (for optional `nano_llm_rs` extension)
 
-### Install and test SDK
+### Install Python packages for the pipeline
+
+From the repository root, install the SDK in editable mode with its dev extras:
 
 ```bash
-pip install -e ./sdk
+python -m pip install --upgrade pip
+python -m pip install -e './sdk[dev]'
+```
+
+That single install covers the local Python workflow:
+
+- `pydantic` and `typing-extensions` for the `nano_llm` package itself
+- `pytest` and `pytest-cov` for `sdk/tests/`
+- `griffe` for `scripts/generate_api.py`
+- `ruff` and `mypy` for the same lint and type-check steps used in CI
+
+`scripts/translate_docs.py` uses the Python standard library plus `.env.local`, and `scripts/validate_snippets.py` only needs the editable SDK install. You do not need extra local packages such as `requests` or `pyyaml` for the current checked-in pipeline scripts.
+
+### Test the SDK
+
+```bash
 pytest sdk/tests/ -v
 ```
 
@@ -166,7 +183,7 @@ The docs project includes `docs/pnpm-workspace.yaml` with `allowBuilds` entries 
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e ./sdk pytest griffe requests pyyaml ruff mypy
+python -m pip install -e './sdk[dev]'
 pnpm --prefix docs install
 ```
 
@@ -175,18 +192,18 @@ pnpm --prefix docs install
     - Example source change: `sdk/nano_llm/engine.py`
     - Example docs change: `docs/content/docs/guides/*.mdx`
 
-2. Regenerate API reference docs from source.
+1. Regenerate API reference docs from source.
 
 ```bash
 python scripts/generate_api.py
 ```
 
-3. Propagate API changes to the other docs pages.
+1. Propagate API changes to the other docs pages.
 
 - Update guides, tutorials, migration notes, and troubleshooting pages under `docs/content/docs/**`.
 - This can be done manually or with an LLM-assisted authoring workflow.
 
-4. Generate English docs.
+1. Generate English docs.
 
 ```bash
 # real translation when credentials are configured
@@ -196,7 +213,7 @@ python scripts/translate_docs.py
 TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 ```
 
-5. Execute and validate runnable Python snippets.
+1. Execute and validate runnable Python snippets.
 
 ```bash
 MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
@@ -211,13 +228,12 @@ pnpm --prefix docs dev
 
 For the local showcase, use the preview server instead of a production build. The CI workflow remains responsible for `pnpm --prefix docs build`.
 
-7. Open the preview in your browser.
+1. Open the preview in your browser.
 
 - Default URL: `http://localhost:3000`
 - Review the changed guides, API reference pages, and translated English outputs.
 
-8. Repeat the regeneration, validation, and preview cycle until the docs and source stay in sync.
-
+1. Repeat the regeneration, validation, and preview cycle until the docs and source stay in sync.
 
 ## Project structure
 
