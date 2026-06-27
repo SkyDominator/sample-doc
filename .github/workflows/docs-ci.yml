@@ -81,4 +81,8 @@ jobs:
           args: >-
             --no-progress
             --verbose
+            --root-dir ${{ github.workspace }}/docs/.next/server/app
+            --fallback-extensions html
+            --exclude ^https://fonts\.googleapis\.com/?$
+            --exclude ^https://fonts\.gstatic\.com/?$
             docs/.next/**/*.html
