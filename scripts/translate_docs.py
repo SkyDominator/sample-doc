@@ -176,10 +176,6 @@ def _is_mock_mode() -> bool:
     return value.strip().lower() in MOCK_MODE_TRUE_VALUES
 
 
-def _mock_translate_call(text: str) -> str:
-    return text
-
-
 def _translate_file(
     source: Path,
     call_translate,
@@ -233,20 +229,25 @@ def main() -> int:
     glossary_terms = [t.strip() for t in glossary_raw.split(",") if t.strip()]
     max_workers = max(1, min(int(os.environ.get("TRANSLATE_MAX_WORKERS", "4")), 8))
 
-    if mock_mode:
-        call_translate = _mock_translate_call
-        print("translate_docs.py: TRANSLATE_MOCK_MODE enabled; copying Korean docs to English outputs")
-    else:
-        api_key = os.environ["GOOGLE_TRANSLATE_API_KEY"]
-        project_id = os.environ["GOOGLE_TRANSLATE_PROJECT_ID"]
-        location = os.environ.get("GOOGLE_TRANSLATE_LOCATION", "global")
-        call_translate = _google_translate_api_call_factory(api_key, project_id, location)
-
     sources = [
         p
         for p in root.rglob("*.mdx")
         if not p.name.endswith(".en.mdx") and not _is_in_frozen_version(p)
     ]
+
+    if mock_mode:
+        print("translate_docs.py: TRANSLATE_MOCK_MODE enabled; leaving English outputs unchanged")
+        print(
+            "translate_docs.py: "
+            f"scanned={len(sources)} translated=0 "
+            "updated=0 unchanged=0 failed=0 duration_sec=0.0"
+        )
+        return 0
+
+    api_key = os.environ["GOOGLE_TRANSLATE_API_KEY"]
+    project_id = os.environ["GOOGLE_TRANSLATE_PROJECT_ID"]
+    location = os.environ.get("GOOGLE_TRANSLATE_LOCATION", "global")
+    call_translate = _google_translate_api_call_factory(api_key, project_id, location)
 
     scanned = len(sources)
     updated = 0
