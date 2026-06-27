@@ -7,6 +7,17 @@ description: End-to-end inference pipeline example
 
 This tutorial follows the flow of initializing a `NanoLLMEngine` instance, running generation and streaming requests, inspecting memory state and error paths, and then closing the session.
 
+<Callout type="info" title="Read this as one guided session">
+This page is meant to be followed top to bottom. Each section isolates one checkpoint in the runtime so you can tell whether request execution, memory inspection, and shutdown are behaving as expected.
+</Callout>
+
+## Stage map
+
+1. **Boot the runtime**: Create the engine, attach engine-level config, and open the mock device session.
+2. **Execute requests**: Compare synchronous output with the streaming path without losing the shared setup context.
+3. **Inspect state**: Check both engine telemetry and the independent `DeviceMemory` reservation model.
+4. **Close safely**: Verify the error path and end the session with a clean unload sequence.
+
 ## 1) Initialize the Runtime
 
 ```python
@@ -24,87 +35,125 @@ engine = NanoLLMEngine(
 engine.load_to_device(device_id=0)
 ```
 
-## 2) Run a Single Generation Request
+## 2) Execute request paths
 
-```python
-import os
+<Tabs defaultValue="sync">
+    <TabsList>
+        <TabsTrigger value="sync">Synchronous request</TabsTrigger>
+        <TabsTrigger value="streaming">Streaming request</TabsTrigger>
+    </TabsList>
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+    <TabsContent value="sync">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+    Use this path when you want the most direct checkpoint for verifying how `quantization` and `max_tokens` appear in one returned string.
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
-engine.load_to_device(device_id=0)
+    ```python
+    import os
 
-cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("Explain what the INT8 setting means for the memory-usage label.", cfg)
-print(out)
+    from nano_llm import InferenceConfig, NanoLLMEngine
 
-engine.unload()
-```
+    os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-`generate()` adds the `[mock:{quantization}:tokens={max_tokens}]` prefix so part of the current engine and request configuration is visible directly in the returned string.
+    engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+    engine.load_to_device(device_id=0)
 
-## 3) Run a Streaming Request
+    cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
+    out = engine.generate("Explain what the INT8 setting means for the memory-usage label.", cfg)
+    print(out)
 
-```python
-import os
+    engine.unload()
+    ```
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+    `generate()` adds the `[mock:{quantization}:tokens={max_tokens}]` prefix so part of the current engine and request configuration is visible directly in the returned string.
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+    </TabsContent>
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
-engine.load_to_device(device_id=0)
+    <TabsContent value="streaming">
 
-for token in engine.generate_streaming(
-	"Explain how batched inference settings are reflected in streaming output.",
-    InferenceConfig(max_tokens=40, temperature=0.1),
-):
-    print(token)
+    Use this path when you want to inspect the same output contract through the token stream instead of a single blocking return value.
 
-engine.unload()
-```
+    ```python
+    import os
 
-`generate_streaming()` reuses the internal result from `generate()`, so joining the tokens back together yields the same payload as the synchronous call.
+    from nano_llm import InferenceConfig, NanoLLMEngine
 
-## 4) Check Memory Telemetry
+    os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-```python
-import os
+    engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+    engine.load_to_device(device_id=0)
 
-from nano_llm import NanoLLMEngine
+    for token in engine.generate_streaming(
+            "Explain how batched inference settings are reflected in streaming output.",
+            InferenceConfig(max_tokens=40, temperature=0.1),
+    ):
+            print(token)
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+    engine.unload()
+    ```
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
+    `generate_streaming()` reuses the internal result from `generate()`, so joining the tokens back together yields the same payload as the synchronous call.
 
-engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+    </TabsContent>
+</Tabs>
 
-engine.unload()
-```
+## 3) Inspect memory surfaces
 
-`get_device_memory()` reads the mock memory state currently held by the engine. Before load, `used_mb` is `0`; after load, it is `1024`.
+<Tabs defaultValue="telemetry">
+    <TabsList>
+        <TabsTrigger value="telemetry">Engine telemetry</TabsTrigger>
+        <TabsTrigger value="pool">DeviceMemory pool</TabsTrigger>
+    </TabsList>
 
-## 5) Check Device Memory Pool Reservations
+    <TabsContent value="telemetry">
 
-```python
-from nano_llm import DeviceMemory
+    This view is about engine state. The key transition is whether the runtime has already been loaded into the mock device session.
 
-memory = DeviceMemory(total_bytes=32 * 1024 * 1024)
-reserved = memory.allocate(16 * 1024 * 1024)
-print(reserved, f"{memory.utilization():.2f}")
+    ```python
+    import os
 
-memory.free(16 * 1024 * 1024)
-print(f"{memory.utilization():.2f}")
-```
+    from nano_llm import NanoLLMEngine
 
-This step shows a pattern for checking reservation availability in an independent memory pool, separate from engine telemetry.
+    os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-## 6) Error Handling Pattern
+    engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+    print(engine.get_device_memory())
+
+    engine.load_to_device(0)
+    stats = engine.get_device_memory()
+    print(stats["total_mb"], stats["used_mb"])
+
+    engine.unload()
+    ```
+
+    `get_device_memory()` reads the mock memory state currently held by the engine. Before load, `used_mb` is `0`; after load, it is `1024`.
+
+    </TabsContent>
+
+    <TabsContent value="pool">
+
+    This view is separate from engine load state and focuses on raw reservation behavior in the standalone memory pool abstraction.
+
+    ```python
+    from nano_llm import DeviceMemory
+
+    memory = DeviceMemory(total_bytes=32 * 1024 * 1024)
+    reserved = memory.allocate(16 * 1024 * 1024)
+    print(reserved, f"{memory.utilization():.2f}")
+
+    memory.free(16 * 1024 * 1024)
+    print(f"{memory.utilization():.2f}")
+    ```
+
+    This step shows a pattern for checking reservation availability in an independent memory pool, separate from engine telemetry.
+
+    </TabsContent>
+</Tabs>
+
+## 4) Error handling pattern
+
+<Callout type="warning" title="Treat this as a setup probe">
+This failure path is useful when you want to prove the environment guard is still active. Here, an exception is the expected outcome.
+</Callout>
 
 ```python
 import os
@@ -121,7 +170,7 @@ except DeviceNotFoundError as exc:
     print(f"Expected error: {exc}")
 ```
 
-## 7) Shutdown
+## 5) Shutdown
 
 ```python
 import os
@@ -134,6 +183,10 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()
 ```
+
+<Callout type="success" title="Final check">
+After `unload()`, the runtime should be back in an unloaded state and the memory telemetry should drop back to zero usage.
+</Callout>
 
 ## Operational Checklist
 

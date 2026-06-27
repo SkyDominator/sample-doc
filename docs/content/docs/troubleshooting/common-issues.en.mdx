@@ -5,136 +5,197 @@ description: Frequent errors and how to resolve them
 
 # Common Issues
 
-## 1) DeviceNotFoundError: mock hardware not found
+<Callout type="warning" title="Use this page by symptom first">
+Start with the failure shape you can see right now: startup failure, state mismatch, or output surprise. Each tabbed section below groups related issues so you can compare causes without jumping around the page.
+</Callout>
 
-Symptoms:
-- `load_to_device()` raises `DeviceNotFoundError`
+## Triage map
 
-Cause:
-- The `MOCK_RNGD_HARDWARE` environment variable is not set.
+- [Startup and load failures](#1-startup-and-load-failures): Problems that occur before the runtime is ready to answer a generation request.
+- [Memory and state mismatches](#2-memory-and-state-mismatches): Cases where the allocator state or reported device usage does not match what you expected.
+- [Output contract surprises](#3-output-contract-surprises): Unexpected output prefixes or streaming behavior that still follow the current mock contract.
 
-Resolution:
+## 1) Startup and load failures
 
-```python
-import os
+<Tabs defaultValue="missing-hardware">
+	<TabsList>
+		<TabsTrigger value="missing-hardware">Missing mock hardware</TabsTrigger>
+		<TabsTrigger value="not-loaded">Engine not loaded</TabsTrigger>
+	</TabsList>
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-```
+	<TabsContent value="missing-hardware">
 
-## 2) GenerationError: engine is not loaded
+	### DeviceNotFoundError: mock hardware not found
 
-Symptoms:
-- `generate()` or `generate_streaming()` raises `GenerationError`
+	Symptoms:
+	- `load_to_device()` raises `DeviceNotFoundError`
 
-Cause:
-- A generation function is called before `load_to_device()`.
+	Cause:
+	- The `MOCK_RNGD_HARDWARE` environment variable is not set.
 
-Resolution:
+	Resolution:
 
-```python
-import os
+	```python
+	import os
 
-from nano_llm import NanoLLMEngine
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	```
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock.bin")
-engine.load_to_device(0)
-print(engine.generate("ready"))
-```
+	</TabsContent>
 
-## 3) RuntimeError: free size exceeds used memory
+	<TabsContent value="not-loaded">
 
-Symptoms:
-- `DeviceMemory.free()` raises `RuntimeError`
+	### GenerationError: engine is not loaded
 
-Cause:
-- The code attempts to release more bytes than are currently reserved.
+	Symptoms:
+	- `generate()` or `generate_streaming()` raises `GenerationError`
 
-Resolution:
+	Cause:
+	- A generation function is called before `load_to_device()`.
 
-```python
-from nano_llm import DeviceMemory
+	Resolution:
 
-memory = DeviceMemory(total_bytes=1024 * 1024)
-memory.allocate(256 * 1024)
+	```python
+	import os
 
-try:
-	memory.free(512 * 1024)
-except RuntimeError as exc:
-	print(f"Expected error: {exc}")
-```
+	from nano_llm import NanoLLMEngine
 
-Checking the `allocate()` return value together with `utilization()` makes it easier to understand the current state of the memory pool.
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	engine = NanoLLMEngine(model_path="models/mock.bin")
+	engine.load_to_device(0)
+	print(engine.generate("ready"))
+	```
 
-## 4) The output prefix is not what you expected
+	</TabsContent>
+</Tabs>
 
-Symptoms:
-- The result looks like `[mock:FP16:tokens=128] ...`, and the desired configuration is not visible.
+## 2) Memory and state mismatches
 
-Cause:
-- `quantization` was not passed to the constructor, or `InferenceConfig(max_tokens=...)` was omitted.
+<Tabs defaultValue="free-exceeds-used">
+	<TabsList>
+		<TabsTrigger value="free-exceeds-used">Free exceeds used</TabsTrigger>
+		<TabsTrigger value="telemetry-zero">Telemetry stays at 0</TabsTrigger>
+	</TabsList>
 
-Resolution:
+	<TabsContent value="free-exceeds-used">
 
-```python
-import os
+	### RuntimeError: free size exceeds used memory
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+	Symptoms:
+	- `DeviceMemory.free()` raises `RuntimeError`
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	Cause:
+	- The code attempts to release more bytes than are currently reserved.
 
-engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
-engine.load_to_device(0)
-print(engine.generate("status", InferenceConfig(max_tokens=32)))
-```
+	Resolution:
 
-## 5) `get_device_memory()` always returns 0
+	```python
+	from nano_llm import DeviceMemory
 
-Symptoms:
-- `used_mb` keeps showing `0`
+	memory = DeviceMemory(total_bytes=1024 * 1024)
+	memory.allocate(256 * 1024)
 
-Cause:
-- `load_to_device()` has not been called yet, or `unload()` was already called.
+	try:
+			memory.free(512 * 1024)
+	except RuntimeError as exc:
+			print(f"Expected error: {exc}")
+	```
 
-Resolution:
+	Checking the `allocate()` return value together with `utilization()` makes it easier to understand the current state of the memory pool.
 
-```python
-import os
+	</TabsContent>
 
-from nano_llm import NanoLLMEngine as Engine
+	<TabsContent value="telemetry-zero">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	### `get_device_memory()` always returns 0
 
-engine = Engine(model_path="models/mock.bin")
-print(engine.is_loaded)
+	Symptoms:
+	- `used_mb` keeps showing `0`
 
-engine.load_to_device(0)
-print(engine.get_device_memory())
-```
+	Cause:
+	- `load_to_device()` has not been called yet, or `unload()` was already called.
 
-## 6) Streaming output does not look like fine-grained tokenization
+	Resolution:
 
-Symptoms:
-- `generate_streaming()` does not split into subword-like tokens.
+	```python
+	import os
 
-Cause:
-- The current implementation only splits the final string on whitespace.
+	from nano_llm import NanoLLMEngine as Engine
 
-Resolution:
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-```python
-import os
+	engine = Engine(model_path="models/mock.bin")
+	print(engine.is_loaded)
 
-from nano_llm import NanoLLMEngine
+	engine.load_to_device(0)
+	print(engine.get_device_memory())
+	```
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	</TabsContent>
+</Tabs>
 
-engine = NanoLLMEngine(model_path="models/mock.bin")
-engine.load_to_device(0)
+## 3) Output contract surprises
 
-tokens = list(engine.generate_streaming("stream test"))
-print(tokens)
-print(engine.generate("stream test"))
-```
+<Tabs defaultValue="prefix">
+	<TabsList>
+		<TabsTrigger value="prefix">Unexpected prefix</TabsTrigger>
+		<TabsTrigger value="streaming-shape">Streaming shape</TabsTrigger>
+	</TabsList>
 
-If you need the full string, call `generate()` directly. When checking the streaming path, validate it against the current contract of whitespace-based splitting.
+	<TabsContent value="prefix">
+
+	### The output prefix is not what you expected
+
+	Symptoms:
+	- The result looks like `[mock:FP16:tokens=128] ...`, and the desired configuration is not visible.
+
+	Cause:
+	- `quantization` was not passed to the constructor, or `InferenceConfig(max_tokens=...)` was omitted.
+
+	Resolution:
+
+	```python
+	import os
+
+	from nano_llm import InferenceConfig, NanoLLMEngine
+
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+	engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
+	engine.load_to_device(0)
+	print(engine.generate("status", InferenceConfig(max_tokens=32)))
+	```
+
+	</TabsContent>
+
+	<TabsContent value="streaming-shape">
+
+	### Streaming output does not look like fine-grained tokenization
+
+	Symptoms:
+	- `generate_streaming()` does not split into subword-like tokens.
+
+	Cause:
+	- The current implementation only splits the final string on whitespace.
+
+	Resolution:
+
+	```python
+	import os
+
+	from nano_llm import NanoLLMEngine
+
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+	engine = NanoLLMEngine(model_path="models/mock.bin")
+	engine.load_to_device(0)
+
+	tokens = list(engine.generate_streaming("stream test"))
+	print(tokens)
+	print(engine.generate("stream test"))
+	```
+
+	If you need the full string, call `generate()` directly. When checking the streaming path, validate it against the current contract of whitespace-based splitting.
+
+	</TabsContent>
+</Tabs>

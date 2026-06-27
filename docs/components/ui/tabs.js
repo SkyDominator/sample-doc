@@ -6,14 +6,7 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { cn } from "@/lib/utils";
 
 const Tabs = React.forwardRef(({ className, ...props }, ref) => (
-  <TabsPrimitive.Root
-    ref={ref}
-    className={cn(
-      "my-6 rounded-[2rem] border border-slate-200/80 bg-slate-50/85 p-3 shadow-soft",
-      className
-    )}
-    {...props}
-  />
+  <TabsPrimitive.Root ref={ref} className={cn("my-6", className)} {...props} />
 ));
 
 Tabs.displayName = TabsPrimitive.Root.displayName;
