@@ -13,7 +13,7 @@ import {
   isValidDocLocale,
 } from "@/lib/docs";
 import { source } from "@/lib/source";
-import { getMDXComponents } from "@/components/mdx";
+import { createDocsLinkComponent, getMDXComponents } from "@/components/mdx";
 
 const DEFAULT_METADATA = {
   title: "nano-llm-engine",
@@ -44,6 +44,7 @@ export default async function DocsPage({ params }) {
   const allItems = flattenNavigationGroups(groups);
   const { previous, next } = findNeighbors(allItems, page.url);
   const MDX = page.data.body;
+  const docsLinkBase = getDocsHref(locale, page.slugs?.length ? page.slugs : ["index"]);
   const toc = page.data.toc ?? [];
   const section = getSectionMeta(page.slugs?.[0]);
 
@@ -67,7 +68,7 @@ export default async function DocsPage({ params }) {
 
           <div className="mt-8 rounded-[2rem] border border-slate-200/80 bg-white/90 px-6 py-8 shadow-soft backdrop-blur sm:px-8 xl:px-10">
             <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:tracking-tight prose-h1:mb-5 prose-h1:text-4xl prose-h2:mt-12 prose-h2:text-2xl prose-h3:mt-8 prose-h3:text-xl prose-p:text-[15px] prose-p:leading-7 prose-li:text-[15px] prose-li:leading-7 prose-a:text-primary prose-a:no-underline hover:prose-a:text-primary/80 prose-pre:m-0 prose-pre:bg-transparent prose-pre:p-0 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-pre:prose-code:bg-transparent prose-pre:prose-code:p-0 prose-blockquote:rounded-r-2xl prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:px-5 prose-blockquote:py-1 prose-table:overflow-hidden prose-table:rounded-2xl prose-table:border prose-table:border-slate-200 prose-th:bg-slate-50 prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3">
-              <MDX components={getMDXComponents()} />
+              <MDX components={getMDXComponents({ a: createDocsLinkComponent(docsLinkBase) })} />
             </div>
           </div>
 
@@ -110,10 +111,10 @@ export default async function DocsPage({ params }) {
 
             <div className="rounded-[1.5rem] border border-slate-200/80 bg-white/90 p-5 shadow-soft backdrop-blur">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Need next steps?
+                Need Help?
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Use the command palette to jump across guides, generated API reference, and runnable tutorials without losing your current locale.
+                Ask anything to <a href="mailto:raykim@myemail.com" className="text-blue-500 underline">raykim@myemail.com</a> for Help!!
               </p>
             </div>
           </div>
