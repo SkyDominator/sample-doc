@@ -82,6 +82,7 @@ jobs:
             --no-progress
             --verbose
             --root-dir ${{ github.workspace }}/docs/.next/server/app
+            --remap "file://${{ github.workspace }}/docs/.next/server/app/_next/static file://${{ github.workspace }}/docs/.next/static"
             --fallback-extensions html
             --exclude ^https://fonts\.googleapis\.com/?$
             --exclude ^https://fonts\.gstatic\.com/?$
