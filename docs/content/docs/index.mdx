@@ -17,13 +17,52 @@ description: nano-llm-engine 코드베이스 개요
 
 ## 시작 경로
 
-- [빠른 시작](./guides/quickstart)
-- [핵심 개념](./guides/concepts)
-- [API 레퍼런스](./api/engine)
-- [추론 파이프라인](./tutorials/inference-pipeline)
+<Cards>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./guides/quickstart">빠른 시작</a></CardTitle>
+			<CardDescription>모의 장치 세션을 열고 단일 요청을 실행한 뒤 출력 계약을 확인하는 가장 짧은 경로입니다.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./guides/concepts">핵심 개념</a></CardTitle>
+			<CardDescription>양자화 라벨, KV cache 설정, 요청 설정이 mock 런타임에서 어떤 역할을 하는지 정리합니다.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./api/engine">API 레퍼런스</a></CardTitle>
+			<CardDescription>생성자 시그니처, 메서드 계약, 반환 타입, 예외 조건을 바로 확인할 수 있습니다.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./tutorials/inference-pipeline">추론 파이프라인</a></CardTitle>
+			<CardDescription>엔진 생성부터 unload까지의 요청 흐름을 단계별 점검 지점과 함께 따라갑니다.</CardDescription>
+		</CardHeader>
+	</Card>
+</Cards>
 
 ## 현재 코드 포인트
 
-- [세션 상태와 메모리 텔레메트리](./changes/sidebar-and-shell)
-- [생성 출력 메타데이터 추가](./changes/code-block-refresh)
-- [명시적 설정 객체 분리](./changes/locale-entrypoints)
+<Cards className="xl:grid-cols-3">
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./changes/sidebar-and-shell">세션 상태와 메모리 텔레메트리</a></CardTitle>
+			<CardDescription>로드 상태에 따라 모의 장치 세션과 메모리 수치가 어떻게 달라지는지 살펴봅니다.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./changes/code-block-refresh">생성 출력 메타데이터 추가</a></CardTitle>
+			<CardDescription>모든 생성 결과에 양자화 라벨과 토큰 예산이 드러나도록 고정한 출력 접두사를 확인합니다.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./changes/locale-entrypoints">명시적 설정 객체 분리</a></CardTitle>
+			<CardDescription>엔진 수준 설정과 요청 단위 제어를 왜 별도 객체로 분리했는지 검토합니다.</CardDescription>
+		</CardHeader>
+	</Card>
+</Cards>

@@ -7,6 +7,17 @@ description: 엔드투엔드 추론 파이프라인 예제
 
 이 튜토리얼은 `NanoLLMEngine` 인스턴스를 초기화한 뒤, 생성 요청과 스트리밍 요청을 실행하고, 메모리 상태와 오류 경로를 점검한 뒤 세션을 종료하는 흐름을 따라갑니다.
 
+<Callout type="info" title="하나의 세션 흐름으로 읽기">
+이 페이지는 위에서 아래로 순서대로 따라가는 것을 전제로 작성했습니다. 각 구간은 런타임의 점검 지점을 하나씩 분리해, 요청 실행과 메모리 확인, 종료 동작이 어디서 달라지는지 바로 보이게 합니다.
+</Callout>
+
+## 단계 개요
+
+1. **런타임 부팅**: 엔진을 만들고 엔진 수준 설정을 붙인 뒤 모의 장치 세션을 엽니다.
+2. **요청 실행**: 동기 결과와 스트리밍 경로를 같은 맥락에서 비교해 출력 계약을 확인합니다.
+3. **상태 점검**: 엔진 텔레메트리와 별도의 `DeviceMemory` 예약 모델을 각각 확인합니다.
+4. **안전한 종료**: 오류 경로를 점검하고 unload로 세션을 정리합니다.
+
 ## 1) 런타임 초기화
 
 ```python
@@ -24,87 +35,125 @@ engine = NanoLLMEngine(
 engine.load_to_device(device_id=0)
 ```
 
-## 2) 단건 생성 요청
+## 2) 요청 실행 경로
 
-```python
-import os
+<Tabs defaultValue="sync">
+    <TabsList>
+        <TabsTrigger value="sync">동기 요청</TabsTrigger>
+        <TabsTrigger value="streaming">스트리밍 요청</TabsTrigger>
+    </TabsList>
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+    <TabsContent value="sync">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+    이 경로는 `quantization`과 `max_tokens`가 한 번의 반환 문자열에 어떻게 드러나는지 확인할 때 가장 직접적인 점검 구간입니다.
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
-engine.load_to_device(device_id=0)
+    ```python
+    import os
 
-cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
-out = engine.generate("INT8 설정이 메모리 사용량 표기에 어떤 의미를 갖는지 설명해줘", cfg)
-print(out)
+    from nano_llm import InferenceConfig, NanoLLMEngine
 
-engine.unload()
-```
+    os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-`generate()`는 `[mock:{quantization}:tokens={max_tokens}]` 접두사를 붙여 현재 엔진/요청 설정 중 일부를 결과 문자열에서 바로 확인하게 합니다.
+    engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+    engine.load_to_device(device_id=0)
 
-## 3) 스트리밍 요청
+    cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
+    out = engine.generate("INT8 설정이 메모리 사용량 표기에 어떤 의미를 갖는지 설명해줘", cfg)
+    print(out)
 
-```python
-import os
+    engine.unload()
+    ```
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+    `generate()`는 `[mock:{quantization}:tokens={max_tokens}]` 접두사를 붙여 현재 엔진/요청 설정 중 일부를 결과 문자열에서 바로 확인하게 합니다.
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+    </TabsContent>
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
-engine.load_to_device(device_id=0)
+    <TabsContent value="streaming">
 
-for token in engine.generate_streaming(
-	"배치 추론 설정이 스트리밍 출력에 어떻게 반영되는지 설명해줘",
-    InferenceConfig(max_tokens=40, temperature=0.1),
-):
-    print(token)
+    이 경로는 같은 출력 계약을 단일 반환값이 아니라 토큰 스트림으로 확인할 때 사용합니다.
 
-engine.unload()
-```
+    ```python
+    import os
 
-`generate_streaming()`은 내부에서 `generate()` 결과를 재사용하므로, 토큰을 다시 이어 붙이면 동기 호출과 같은 payload를 얻습니다.
+    from nano_llm import InferenceConfig, NanoLLMEngine
 
-## 4) 메모리 텔레메트리 확인
+    os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-```python
-import os
+    engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+    engine.load_to_device(device_id=0)
 
-from nano_llm import NanoLLMEngine
+    for token in engine.generate_streaming(
+            "배치 추론 설정이 스트리밍 출력에 어떻게 반영되는지 설명해줘",
+            InferenceConfig(max_tokens=40, temperature=0.1),
+    ):
+            print(token)
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+    engine.unload()
+    ```
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
+    `generate_streaming()`은 내부에서 `generate()` 결과를 재사용하므로, 토큰을 다시 이어 붙이면 동기 호출과 같은 payload를 얻습니다.
 
-engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+    </TabsContent>
+</Tabs>
 
-engine.unload()
-```
+## 3) 메모리 표면 점검
 
-`get_device_memory()`는 엔진이 현재 점유 중인 mock 메모리 상태를 읽습니다. 로드 전에는 `used_mb`가 `0`, 로드 후에는 `1024`입니다.
+<Tabs defaultValue="telemetry">
+    <TabsList>
+        <TabsTrigger value="telemetry">엔진 텔레메트리</TabsTrigger>
+        <TabsTrigger value="pool">DeviceMemory 풀</TabsTrigger>
+    </TabsList>
 
-## 5) 장치 메모리 풀 예약 확인
+    <TabsContent value="telemetry">
 
-```python
-from nano_llm import DeviceMemory
+    이 보기는 엔진 상태를 확인하는 데 초점을 둡니다. 핵심 변화 지점은 런타임이 모의 장치 세션에 로드되었는지 여부입니다.
 
-memory = DeviceMemory(total_bytes=32 * 1024 * 1024)
-reserved = memory.allocate(16 * 1024 * 1024)
-print(reserved, f"{memory.utilization():.2f}")
+    ```python
+    import os
 
-memory.free(16 * 1024 * 1024)
-print(f"{memory.utilization():.2f}")
-```
+    from nano_llm import NanoLLMEngine
 
-이 단계는 엔진 텔레메트리와 별개로, 독립적인 메모리 풀에서 예약 가능 여부를 확인하는 패턴을 보여줍니다.
+    os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-## 6) 오류 처리 패턴
+    engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+    print(engine.get_device_memory())
+
+    engine.load_to_device(0)
+    stats = engine.get_device_memory()
+    print(stats["total_mb"], stats["used_mb"])
+
+    engine.unload()
+    ```
+
+    `get_device_memory()`는 엔진이 현재 점유 중인 mock 메모리 상태를 읽습니다. 로드 전에는 `used_mb`가 `0`, 로드 후에는 `1024`입니다.
+
+    </TabsContent>
+
+    <TabsContent value="pool">
+
+    이 보기는 엔진 로드 상태와 별개로, 독립적인 메모리 풀 추상화의 예약 동작만 확인합니다.
+
+    ```python
+    from nano_llm import DeviceMemory
+
+    memory = DeviceMemory(total_bytes=32 * 1024 * 1024)
+    reserved = memory.allocate(16 * 1024 * 1024)
+    print(reserved, f"{memory.utilization():.2f}")
+
+    memory.free(16 * 1024 * 1024)
+    print(f"{memory.utilization():.2f}")
+    ```
+
+    이 단계는 엔진 텔레메트리와 별개로, 독립적인 메모리 풀에서 예약 가능 여부를 확인하는 패턴을 보여줍니다.
+
+    </TabsContent>
+</Tabs>
+
+## 4) 오류 처리 패턴
+
+<Callout type="warning" title="설정 점검용 프로브로 보기">
+이 실패 경로는 환경 보호 장치가 여전히 유효한지 확인할 때 유용합니다. 여기서는 예외가 발생하는 것이 기대 결과입니다.
+</Callout>
 
 ```python
 import os
@@ -121,7 +170,7 @@ except DeviceNotFoundError as exc:
     print(f"예상 가능한 오류: {exc}")
 ```
 
-## 7) 종료
+## 5) 종료
 
 ```python
 import os
@@ -134,6 +183,10 @@ engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()
 ```
+
+<Callout type="success" title="마지막 확인 사항">
+`unload()` 이후에는 런타임이 다시 미로드 상태로 돌아가고, 메모리 텔레메트리의 사용량도 0으로 내려가야 합니다.
+</Callout>
 
 ## 운영 체크리스트
 

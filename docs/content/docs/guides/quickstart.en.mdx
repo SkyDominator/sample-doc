@@ -8,6 +8,10 @@ description: Quickstart guide for nano-llm-engine
 This guide explains the shortest path to opening a mock device session and running a single generation request with the `nano-llm-engine` SDK.
 Instead of real RNGD hardware, it simulates device integration through the `MOCK_RNGD_HARDWARE` environment variable.
 
+<Callout type="highlight" title="Before you start">
+Set `MOCK_RNGD_HARDWARE=true` before calling `load_to_device()`. In this sample runtime, that environment variable is the gate that decides whether a mock device session can start.
+</Callout>
+
 ## 1. Install the SDK
 
 Install the Python SDK from the project root.
@@ -16,61 +20,79 @@ Install the Python SDK from the project root.
 pip install -e ./sdk
 ```
 
-## 2. Minimal Run Example
+## 2. Run patterns
 
-The example below shows the basic flow from engine creation through device load and a single generation request.
+Use the tabs below when you want to compare the smallest synchronous flow against the streaming path without repeating the surrounding explanation.
 
-```python
-import os
+<Tabs defaultValue="sync">
+  <TabsList>
+	<TabsTrigger value="sync">Synchronous generation</TabsTrigger>
+	<TabsTrigger value="streaming">Streaming generation</TabsTrigger>
+  </TabsList>
 
-from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+  <TabsContent value="sync">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+  This path shows the full flow from engine creation through one blocking `generate()` call.
 
-engine = NanoLLMEngine(
-	model_path="models/mock-llm.bin",
-	quantization="INT8",
-	kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),
-)
+  ```python
+  import os
 
-engine.load_to_device(device_id=0)
+  from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
 
-result = engine.generate(
-	prompt="Explain how the INT8 setting and token budget appear in the output string.",
-    config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
-)
+  os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-print(result)
-```
+  engine = NanoLLMEngine(
+	  model_path="models/mock-llm.bin",
+	  quantization="INT8",
+	  kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),
+  )
 
-Call `engine.unload()` when you are ready to close the session.
+  engine.load_to_device(device_id=0)
 
-## 3. Streaming Inference Example
+  result = engine.generate(
+	  prompt="Explain how the INT8 setting and token budget appear in the output string.",
+	  config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
+  )
 
-The streaming interface returns the synchronous generation result split into whitespace-delimited tokens.
+  print(result)
+  engine.unload()
+  ```
 
-```python
-import os
+  </TabsContent>
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+  <TabsContent value="streaming">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
-engine.load_to_device()
+  Use this path when you want to inspect the same mock output through the token stream returned by `generate_streaming()`.
 
-stream = engine.generate_streaming(
-	"Summarize which settings the streaming output was generated from.",
-    InferenceConfig(max_tokens=24, temperature=0.0),
-)
-for token in stream:
-    print(token)
+  ```python
+  import os
 
-engine.unload()
-```
+  from nano_llm import InferenceConfig, NanoLLMEngine
 
-## 4. Check a Failure Scenario
+  os.environ["MOCK_RNGD_HARDWARE"] = "true"
+  engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
+  engine.load_to_device()
+
+  stream = engine.generate_streaming(
+	  "Summarize which settings the streaming output was generated from.",
+	  InferenceConfig(max_tokens=24, temperature=0.0),
+  )
+  for token in stream:
+	  print(token)
+
+  engine.unload()
+  ```
+
+  </TabsContent>
+</Tabs>
+
+## 3. Check a failure scenario
 
 If the hardware environment variable is missing, the SDK raises an error immediately and exposes the missing runtime setup before a device session starts.
+
+<Callout type="warning" title="Expected failure">
+Use this check when you want to verify your setup logic. `DeviceNotFoundError` here means the guardrail is working, not that the mock engine is broken.
+</Callout>
 
 ```python
 import os
@@ -87,7 +109,7 @@ except DeviceNotFoundError as exc:
 	print(f"Expected error: {exc}")
 ```
 
-## 5. Next Steps
+## 4. Next steps
 
 - [Core Concepts](./concepts)
 - [API Reference](../api/engine)

@@ -17,13 +17,52 @@ Its core pieces are the Python SDK's engine lifecycle, request configuration obj
 
 ## Getting started
 
-- [Quickstart](./guides/quickstart)
-- [Core Concepts](./guides/concepts)
-- [API Reference](./api/engine)
-- [Inference Pipeline](./tutorials/inference-pipeline)
+<Cards>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./guides/quickstart">Quickstart</a></CardTitle>
+			<CardDescription>Open a mock device session, run one request, and inspect the output contract.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./guides/concepts">Core Concepts</a></CardTitle>
+			<CardDescription>See how quantization labels, KV cache settings, and request config fit into the mock runtime.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./api/engine">API Reference</a></CardTitle>
+			<CardDescription>Jump straight to constructor signatures, method contracts, return types, and exceptions.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./tutorials/inference-pipeline">Inference Pipeline</a></CardTitle>
+			<CardDescription>Follow the end-to-end request flow from engine creation to unload with concrete checkpoints.</CardDescription>
+		</CardHeader>
+	</Card>
+</Cards>
 
 ## Current code highlights
 
-- [Session state and memory telemetry](./changes/sidebar-and-shell)
-- [Generation output metadata added](./changes/code-block-refresh)
-- [Explicit configuration object split](./changes/locale-entrypoints)
+<Cards className="xl:grid-cols-3">
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./changes/sidebar-and-shell">Session state and memory telemetry</a></CardTitle>
+			<CardDescription>Understand how load state changes the mock device session and the memory numbers returned by the SDK.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./changes/code-block-refresh">Generation output metadata added</a></CardTitle>
+			<CardDescription>Inspect the fixed output prefix that makes quantization and token budget visible in every generation result.</CardDescription>
+		</CardHeader>
+	</Card>
+	<Card>
+		<CardHeader>
+			<CardTitle><a href="./changes/locale-entrypoints">Explicit configuration object split</a></CardTitle>
+			<CardDescription>Review why engine-level settings and request-scoped controls are modeled as separate objects.</CardDescription>
+		</CardHeader>
+	</Card>
+</Cards>

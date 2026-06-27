@@ -5,136 +5,197 @@ description: 자주 발생하는 오류와 해결 방법
 
 # 공통 문제 해결
 
-## 1) DeviceNotFoundError: mock hardware not found
+<Callout type="warning" title="증상 기준으로 먼저 찾기">
+지금 눈에 보이는 실패 형태부터 고르세요. 시작 실패, 상태 불일치, 출력 형태 이상으로 나눠 두었기 때문에 서로 비슷한 원인을 한 곳에서 비교할 수 있습니다.
+</Callout>
 
-증상:
-- `load_to_device()` 호출 시 `DeviceNotFoundError` 발생
+## 분류 맵
 
-원인:
-- `MOCK_RNGD_HARDWARE` 환경 변수가 설정되지 않음
+- [시작과 로드 실패](#1-시작과-로드-실패): 런타임이 생성 요청을 받을 준비를 마치기 전에 발생하는 문제입니다.
+- [메모리와 상태 불일치](#2-메모리와-상태-불일치): 할당기 상태나 장치 사용량이 기대와 다르게 보일 때 확인하는 구간입니다.
+- [출력 계약 이상](#3-출력-계약-이상): 출력 접두사나 스트리밍 형태가 낯설지만 현재 mock 계약 안에 있는 경우를 다룹니다.
 
-해결:
+## 1) 시작과 로드 실패
 
-```python
-import os
+<Tabs defaultValue="missing-hardware">
+	<TabsList>
+		<TabsTrigger value="missing-hardware">mock 하드웨어 누락</TabsTrigger>
+		<TabsTrigger value="not-loaded">엔진 미로드</TabsTrigger>
+	</TabsList>
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-```
+	<TabsContent value="missing-hardware">
 
-## 2) GenerationError: engine is not loaded
+	### DeviceNotFoundError: mock hardware not found
 
-증상:
-- `generate()` 또는 `generate_streaming()` 호출 시 `GenerationError` 발생
+	증상:
+	- `load_to_device()` 호출 시 `DeviceNotFoundError` 발생
 
-원인:
-- `load_to_device()` 호출 전 생성 함수 실행
+	원인:
+	- `MOCK_RNGD_HARDWARE` 환경 변수가 설정되지 않음
 
-해결:
+	해결:
 
-```python
-import os
+	```python
+	import os
 
-from nano_llm import NanoLLMEngine
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	```
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock.bin")
-engine.load_to_device(0)
-print(engine.generate("ready"))
-```
+	</TabsContent>
 
-## 3) RuntimeError: free size exceeds used memory
+	<TabsContent value="not-loaded">
 
-증상:
-- `DeviceMemory.free()` 호출 시 `RuntimeError` 발생
+	### GenerationError: engine is not loaded
 
-원인:
-- 현재 예약한 메모리보다 더 큰 바이트 수를 해제하려고 시도함
+	증상:
+	- `generate()` 또는 `generate_streaming()` 호출 시 `GenerationError` 발생
 
-해결:
+	원인:
+	- `load_to_device()` 호출 전 생성 함수 실행
 
-```python
-from nano_llm import DeviceMemory
+	해결:
 
-memory = DeviceMemory(total_bytes=1024 * 1024)
-memory.allocate(256 * 1024)
+	```python
+	import os
 
-try:
-	memory.free(512 * 1024)
-except RuntimeError as exc:
-	print(f"예상 가능한 오류: {exc}")
-```
+	from nano_llm import NanoLLMEngine
 
-`allocate()` 반환값과 `utilization()` 값을 함께 확인하면 메모리 풀의 현재 상태를 빠르게 파악할 수 있습니다.
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	engine = NanoLLMEngine(model_path="models/mock.bin")
+	engine.load_to_device(0)
+	print(engine.generate("ready"))
+	```
 
-## 4) 출력 접두사가 예상과 다름
+	</TabsContent>
+</Tabs>
 
-증상:
-- 결과가 `[mock:FP16:tokens=128] ...` 형태로 나오며 원하는 설정이 보이지 않음
+## 2) 메모리와 상태 불일치
 
-원인:
-- `quantization`을 생성자에서 넘기지 않았거나 `InferenceConfig(max_tokens=...)`를 생략함
+<Tabs defaultValue="free-exceeds-used">
+	<TabsList>
+		<TabsTrigger value="free-exceeds-used">해제량 초과</TabsTrigger>
+		<TabsTrigger value="telemetry-zero">텔레메트리 0 고정</TabsTrigger>
+	</TabsList>
 
-해결:
+	<TabsContent value="free-exceeds-used">
 
-```python
-import os
+	### RuntimeError: free size exceeds used memory
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+	증상:
+	- `DeviceMemory.free()` 호출 시 `RuntimeError` 발생
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	원인:
+	- 현재 예약한 메모리보다 더 큰 바이트 수를 해제하려고 시도함
 
-engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
-engine.load_to_device(0)
-print(engine.generate("status", InferenceConfig(max_tokens=32)))
-```
+	해결:
 
-## 5) `get_device_memory()` 값이 항상 0
+	```python
+	from nano_llm import DeviceMemory
 
-증상:
-- `used_mb`가 계속 `0`으로 표시됨
+	memory = DeviceMemory(total_bytes=1024 * 1024)
+	memory.allocate(256 * 1024)
 
-원인:
-- 아직 `load_to_device()`를 호출하지 않았거나 이미 `unload()`를 호출함
+	try:
+			memory.free(512 * 1024)
+	except RuntimeError as exc:
+			print(f"예상 가능한 오류: {exc}")
+	```
 
-해결:
+	`allocate()` 반환값과 `utilization()` 값을 함께 확인하면 메모리 풀의 현재 상태를 빠르게 파악할 수 있습니다.
 
-```python
-import os
+	</TabsContent>
 
-from nano_llm import NanoLLMEngine as Engine
+	<TabsContent value="telemetry-zero">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	### `get_device_memory()` 값이 항상 0
 
-engine = Engine(model_path="models/mock.bin")
-print(engine.is_loaded)
+	증상:
+	- `used_mb`가 계속 `0`으로 표시됨
 
-engine.load_to_device(0)
-print(engine.get_device_memory())
-```
+	원인:
+	- 아직 `load_to_device()`를 호출하지 않았거나 이미 `unload()`를 호출함
 
-## 6) 스트리밍 결과가 세부 토큰화처럼 보이지 않음
+	해결:
 
-증상:
-- `generate_streaming()` 결과가 서브워드 토큰처럼 잘게 쪼개지지 않음
+	```python
+	import os
 
-원인:
-- 현재 구현은 최종 문자열을 공백 기준으로만 분리함
+	from nano_llm import NanoLLMEngine as Engine
 
-해결:
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-```python
-import os
+	engine = Engine(model_path="models/mock.bin")
+	print(engine.is_loaded)
 
-from nano_llm import NanoLLMEngine
+	engine.load_to_device(0)
+	print(engine.get_device_memory())
+	```
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	</TabsContent>
+</Tabs>
 
-engine = NanoLLMEngine(model_path="models/mock.bin")
-engine.load_to_device(0)
+## 3) 출력 계약 이상
 
-tokens = list(engine.generate_streaming("stream test"))
-print(tokens)
-print(engine.generate("stream test"))
-```
+<Tabs defaultValue="prefix">
+	<TabsList>
+		<TabsTrigger value="prefix">예상 밖 접두사</TabsTrigger>
+		<TabsTrigger value="streaming-shape">스트리밍 형태</TabsTrigger>
+	</TabsList>
 
-전체 문자열이 필요하면 `generate()`를 직접 호출하고, 스트리밍 경로를 검사할 때는 공백 단위 분해라는 현재 계약을 기준으로 확인합니다.
+	<TabsContent value="prefix">
+
+	### 출력 접두사가 예상과 다름
+
+	증상:
+	- 결과가 `[mock:FP16:tokens=128] ...` 형태로 나오며 원하는 설정이 보이지 않음
+
+	원인:
+	- `quantization`을 생성자에서 넘기지 않았거나 `InferenceConfig(max_tokens=...)`를 생략함
+
+	해결:
+
+	```python
+	import os
+
+	from nano_llm import InferenceConfig, NanoLLMEngine
+
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+	engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
+	engine.load_to_device(0)
+	print(engine.generate("status", InferenceConfig(max_tokens=32)))
+	```
+
+	</TabsContent>
+
+	<TabsContent value="streaming-shape">
+
+	### 스트리밍 결과가 세부 토큰화처럼 보이지 않음
+
+	증상:
+	- `generate_streaming()` 결과가 서브워드 토큰처럼 잘게 쪼개지지 않음
+
+	원인:
+	- 현재 구현은 최종 문자열을 공백 기준으로만 분리함
+
+	해결:
+
+	```python
+	import os
+
+	from nano_llm import NanoLLMEngine
+
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+
+	engine = NanoLLMEngine(model_path="models/mock.bin")
+	engine.load_to_device(0)
+
+	tokens = list(engine.generate_streaming("stream test"))
+	print(tokens)
+	print(engine.generate("stream test"))
+	```
+
+	전체 문자열이 필요하면 `generate()`를 직접 호출하고, 스트리밍 경로를 검사할 때는 공백 단위 분해라는 현재 계약을 기준으로 확인합니다.
+
+	</TabsContent>
+</Tabs>

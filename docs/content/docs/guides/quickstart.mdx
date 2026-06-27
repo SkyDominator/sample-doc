@@ -8,6 +8,10 @@ description: nano-llm-engine 빠른 시작 가이드
 이 가이드는 `nano-llm-engine` SDK로 모의 장치 세션을 열고 단일 생성 요청을 실행하는 최소 경로를 설명합니다.
 실제 RNGD 하드웨어 대신 `MOCK_RNGD_HARDWARE` 환경 변수를 통해 장치 연동을 시뮬레이션합니다.
 
+<Callout type="highlight" title="시작 전에 확인할 점">
+`load_to_device()`를 호출하기 전에 `MOCK_RNGD_HARDWARE=true`를 설정해야 합니다. 이 샘플 런타임에서는 해당 환경 변수가 모의 장치 세션 시작 가능 여부를 결정합니다.
+</Callout>
+
 ## 1. SDK 설치
 
 프로젝트 루트에서 Python SDK를 설치합니다.
@@ -16,61 +20,79 @@ description: nano-llm-engine 빠른 시작 가이드
 pip install -e ./sdk
 ```
 
-## 2. 최소 실행 예제
+## 2. 실행 패턴 비교
 
-아래 코드는 엔진 생성, 장치 로드, 단건 생성 요청까지의 기본 흐름을 보여줍니다.
+동기 경로와 스트리밍 경로를 비교해야 할 때는 아래 탭에서 필요한 흐름만 바로 확인하면 됩니다.
 
-```python
-import os
+<Tabs defaultValue="sync">
+	<TabsList>
+		<TabsTrigger value="sync">동기 생성</TabsTrigger>
+		<TabsTrigger value="streaming">스트리밍 생성</TabsTrigger>
+	</TabsList>
 
-from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+	<TabsContent value="sync">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	이 경로는 엔진 생성부터 한 번의 `generate()` 호출까지 이어지는 가장 기본적인 실행 흐름입니다.
 
-engine = NanoLLMEngine(
-	model_path="models/mock-llm.bin",
-	quantization="INT8",
-	kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),
-)
+	```python
+	import os
 
-engine.load_to_device(device_id=0)
+	from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
 
-result = engine.generate(
-	prompt="INT8 설정과 토큰 예산이 출력 문자열에 어떻게 드러나는지 설명해줘.",
-	config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
-)
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-print(result)
-```
+	engine = NanoLLMEngine(
+			model_path="models/mock-llm.bin",
+			quantization="INT8",
+			kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),
+	)
 
-세션을 종료할 때는 `engine.unload()`를 호출합니다.
+	engine.load_to_device(device_id=0)
 
-## 3. 스트리밍 추론 예제
+	result = engine.generate(
+			prompt="INT8 설정과 토큰 예산이 출력 문자열에 어떻게 드러나는지 설명해줘.",
+			config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
+	)
 
-스트리밍 인터페이스는 동기 생성 결과를 공백 단위 토큰으로 나눠 전달합니다.
+	print(result)
+	engine.unload()
+	```
 
-```python
-import os
+	</TabsContent>
 
-from nano_llm import InferenceConfig, NanoLLMEngine
+	<TabsContent value="streaming">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
-engine.load_to_device()
+	이 경로는 같은 mock 출력을 `generate_streaming()`이 반환하는 토큰 스트림 형태로 확인할 때 사용합니다.
 
-stream = engine.generate_streaming(
-	"스트리밍 출력이 어떤 설정으로 생성됐는지 요약해줘",
-	InferenceConfig(max_tokens=24, temperature=0.0),
-)
-for token in stream:
-	print(token)
+	```python
+	import os
 
-engine.unload()
-```
+	from nano_llm import InferenceConfig, NanoLLMEngine
 
-## 4. 실패 시나리오 확인
+	os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
+	engine.load_to_device()
+
+	stream = engine.generate_streaming(
+			"스트리밍 출력이 어떤 설정으로 생성됐는지 요약해줘",
+			InferenceConfig(max_tokens=24, temperature=0.0),
+	)
+	for token in stream:
+			print(token)
+
+	engine.unload()
+	```
+
+	</TabsContent>
+</Tabs>
+
+## 3. 실패 시나리오 확인
 
 하드웨어 환경 변수가 없으면 SDK가 즉시 오류를 발생시켜 장치 세션을 시작하기 전에 실행 환경 누락을 드러냅니다.
+
+<Callout type="warning" title="의도된 실패 확인">
+이 코드는 설정 검증이 제대로 동작하는지 확인할 때 사용합니다. 여기서 `DeviceNotFoundError`가 발생하는 것은 mock 엔진 고장이 아니라 보호 장치가 정상 동작한다는 뜻입니다.
+</Callout>
 
 ```python
 import os
@@ -87,7 +109,7 @@ except DeviceNotFoundError as exc:
 	print(f"예상된 오류: {exc}")
 ```
 
-## 5. 다음 단계
+## 4. 다음 단계
 
 - [핵심 개념](./concepts)
 - [API 레퍼런스](../api/engine)
