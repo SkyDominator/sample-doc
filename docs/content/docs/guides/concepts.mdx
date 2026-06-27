@@ -8,41 +8,74 @@ description: 양자화, KV cache, 배치 추론 개념
 `nano-llm-engine`는 RNGD 장치 연동을 모의한 추론 런타임 예제입니다.
 실제 모델 계산을 수행하지는 않지만, 엔진 수명주기와 요청 설정, 메모리 추상화처럼 런타임을 둘러싼 제어면을 작게 재현합니다.
 
-## 양자화(Quantization)
+<Callout type="info" title="이 페이지를 보는 관점">
+이 문서는 mock 런타임에서 어떤 제어 지점이 있고, 그 설정이 어디에 붙으며, 무엇을 바꾸는지 파악하기 위한 안내입니다. 성능 비교보다는 인터페이스 형태와 상태 흐름에 초점을 둡니다.
+</Callout>
 
-`quantization`은 엔진 인스턴스에 저장되는 리터럴 값이며 현재 mock 출력의 접두사에도 그대로 반영됩니다.
+## 설정이 붙는 위치
 
-- `FP32`: 가장 높은 정밀도 표기
-- `FP16`: 기본값
-- `INT8`: 메모리 절감형 설정을 가리키는 표기
-- `INT4`: 더 공격적인 압축을 가리키는 표기
+<Tabs defaultValue="engine">
+    <TabsList>
+        <TabsTrigger value="engine">엔진 수준 설정</TabsTrigger>
+        <TabsTrigger value="request">요청 수준 설정</TabsTrigger>
+    </TabsList>
 
-이 코드베이스에서 양자화 값은 실제 수치 계산을 바꾸지 않지만, 어떤 설정으로 요청을 생성했는지 결과 문자열만으로 추적하게 해줍니다.
+    <TabsContent value="engine">
 
-## KV Cache 메모리 모델
+    엔진 수준 설정은 `NanoLLMEngine` 인스턴스에 붙어 여러 요청에 걸쳐 런타임의 정체성을 유지합니다.
 
-LLM 추론에서 KV cache는 이전 토큰의 attention key/value 상태를 보존해 재계산을 줄이는 버퍼입니다.
-`KVCacheConfig`는 이 버퍼에 대한 가정을 엔진에 보관합니다.
+    ### 양자화(Quantization)
 
-- `max_seq_len`: cache가 감당할 최대 시퀀스 길이
-- `cache_dtype`: cache 저장 정밀도 라벨
+    `quantization`은 엔진 인스턴스에 저장되는 리터럴 값이며 현재 mock 출력의 접두사에도 그대로 반영됩니다.
 
-현재 mock 엔진은 `KVCacheConfig`를 메모리 계산에 직접 반영하지 않지만, 엔진 인스턴스가 어떤 캐시 정책으로 생성되었는지 명시적으로 유지합니다.
+    - `FP32`: 가장 높은 정밀도 표기
+    - `FP16`: 기본값
+    - `INT8`: 메모리 절감형 설정을 가리키는 표기
+    - `INT4`: 더 공격적인 압축을 가리키는 표기
 
-## 배치 추론(Batched Inference)
+    이 코드베이스에서 양자화 값은 실제 수치 계산을 바꾸지 않지만, 어떤 설정으로 요청을 생성했는지 결과 문자열만으로 추적하게 해줍니다.
 
-`InferenceConfig`는 요청 단위 제어면을 함께 제공합니다.
+    ### KV Cache 메모리 모델
 
-- `batch_size`: 한 번에 묶어 처리할 프롬프트 수
-- `max_tokens`: 출력 접두사에 반영되는 토큰 예산
-- `temperature`: 샘플링 다양성을 나타내는 자리표시 값
+    LLM 추론에서 KV cache는 이전 토큰의 attention key/value 상태를 보존해 재계산을 줄이는 버퍼입니다.
+    `KVCacheConfig`는 이 버퍼에 대한 가정을 엔진에 보관합니다.
 
-이 구현에서 `generate()`는 `max_tokens`만 문자열에 노출하지만, `batch_size`와 `temperature`도 실제 런타임과 유사한 호출 형태를 유지하기 위해 함께 전달됩니다.
+    - `max_seq_len`: cache가 감당할 최대 시퀀스 길이
+    - `cache_dtype`: cache 저장 정밀도 라벨
+
+    현재 mock 엔진은 `KVCacheConfig`를 메모리 계산에 직접 반영하지 않지만, 엔진 인스턴스가 어떤 캐시 정책으로 생성되었는지 명시적으로 유지합니다.
+
+    </TabsContent>
+
+    <TabsContent value="request">
+
+    요청 수준 설정은 `InferenceConfig`에 담겨 `generate()` 또는 `generate_streaming()` 호출마다 함께 전달됩니다.
+
+    ### 배치 추론(Batched Inference)
+
+    `InferenceConfig`는 요청 단위 제어면을 함께 제공합니다.
+
+    - `batch_size`: 한 번에 묶어 처리할 프롬프트 수
+    - `max_tokens`: 출력 접두사에 반영되는 토큰 예산
+    - `temperature`: 샘플링 다양성을 나타내는 자리표시 값
+
+    이 구현에서 `generate()`는 `max_tokens`만 문자열에 노출하지만, `batch_size`와 `temperature`도 실제 런타임과 유사한 호출 형태를 유지하기 위해 함께 전달됩니다.
+
+    <Callout type="highlight" title="현재 바로 관찰 가능한 값">
+    지금의 mock 런타임에서는 요청 설정 중 `max_tokens`가 생성 접두사에 직접 드러납니다. 나머지 값은 실제 런타임과 비슷한 API 형태를 유지하기 위해 함께 존재합니다.
+    </Callout>
+
+    </TabsContent>
+</Tabs>
 
 ## 장치 메모리 추상화
 
 `NanoLLMEngine.get_device_memory()`는 엔진이 로드되었는지에 따라 간단한 텔레메트리를 반환합니다.
 로드 전에는 `used_mb=0`, 로드 후에는 `used_mb=1024`가 됩니다.
+
+<Callout type="success" title="이 구분이 중요한 이유">
+엔진의 로드 상태는 장치 텔레메트리에 영향을 주고, `DeviceMemory`는 별도의 할당기 계약을 모델링합니다. 두 층위를 분리해 보면 상태 변화를 더 쉽게 추적할 수 있습니다.
+</Callout>
 
 별도의 `DeviceMemory` 래퍼는 독립적인 메모리 풀을 가정합니다.
 

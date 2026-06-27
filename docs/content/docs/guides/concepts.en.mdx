@@ -8,41 +8,74 @@ description: Quantization, KV cache, and batched inference concepts
 `nano-llm-engine` is an inference runtime example that mocks RNGD device integration.
 It does not perform real model computation, but it recreates a small control surface around a runtime, including engine lifecycle, request configuration, and memory abstractions.
 
-## Quantization
+<Callout type="info" title="Read this page as a control-surface map">
+The goal here is to understand which knobs exist, where they live, and what they change in the mock runtime. This page is about interface shape and state flow, not benchmark behavior.
+</Callout>
 
-`quantization` is a literal value stored on the engine instance, and it is also reflected directly in the current mock output prefix.
+## Configuration surfaces
 
-- `FP32`: highest-precision label
-- `FP16`: default value
-- `INT8`: label for a memory-saving configuration
-- `INT4`: label for more aggressive compression
+<Tabs defaultValue="engine">
+    <TabsList>
+        <TabsTrigger value="engine">Engine-level config</TabsTrigger>
+        <TabsTrigger value="request">Request-level config</TabsTrigger>
+    </TabsList>
 
-In this codebase, quantization does not change numeric computation, but it lets you track which configuration produced a request by inspecting the output string alone.
+    <TabsContent value="engine">
 
-## KV Cache Memory Model
+    Engine-level settings stay attached to the `NanoLLMEngine` instance and shape the runtime identity carried across requests.
 
-In LLM inference, the KV cache is a buffer that preserves attention key/value state from previous tokens to avoid recomputation.
-`KVCacheConfig` stores the assumptions for this buffer on the engine.
+    ### Quantization
 
-- `max_seq_len`: maximum sequence length the cache is expected to hold
-- `cache_dtype`: precision label for cache storage
+    `quantization` is a literal value stored on the engine instance, and it is also reflected directly in the current mock output prefix.
 
-The current mock engine does not apply `KVCacheConfig` directly to memory calculations, but it explicitly preserves which cache policy the engine instance was created with.
+    - `FP32`: highest-precision label
+    - `FP16`: default value
+    - `INT8`: label for a memory-saving configuration
+    - `INT4`: label for more aggressive compression
 
-## Batched Inference
+    In this codebase, quantization does not change numeric computation, but it lets you track which configuration produced a request by inspecting the output string alone.
 
-`InferenceConfig` provides request-scoped controls.
+    ### KV Cache Memory Model
 
-- `batch_size`: number of prompts grouped into one request
-- `max_tokens`: token budget reflected in the output prefix
-- `temperature`: placeholder value representing sampling diversity
+    In LLM inference, the KV cache is a buffer that preserves attention key/value state from previous tokens to avoid recomputation.
+    `KVCacheConfig` stores the assumptions for this buffer on the engine.
 
-In this implementation, `generate()` exposes only `max_tokens` in the string output, but `batch_size` and `temperature` are still passed together to preserve a runtime-like call shape.
+    - `max_seq_len`: maximum sequence length the cache is expected to hold
+    - `cache_dtype`: precision label for cache storage
+
+    The current mock engine does not apply `KVCacheConfig` directly to memory calculations, but it explicitly preserves which cache policy the engine instance was created with.
+
+    </TabsContent>
+
+    <TabsContent value="request">
+
+    Request-level settings live on `InferenceConfig` and travel with each call to `generate()` or `generate_streaming()`.
+
+    ### Batched Inference
+
+    `InferenceConfig` provides request-scoped controls.
+
+    - `batch_size`: number of prompts grouped into one request
+    - `max_tokens`: token budget reflected in the output prefix
+    - `temperature`: placeholder value representing sampling diversity
+
+    In this implementation, `generate()` exposes only `max_tokens` in the string output, but `batch_size` and `temperature` are still passed together to preserve a runtime-like call shape.
+
+    <Callout type="highlight" title="What actually changes today">
+    In the current mock runtime, `max_tokens` is the request field you can observe directly in the generation prefix. The other request settings exist to preserve a realistic API shape.
+    </Callout>
+
+    </TabsContent>
+</Tabs>
 
 ## Device Memory Abstraction
 
 `NanoLLMEngine.get_device_memory()` returns simple telemetry based on whether the engine is loaded.
 Before loading, `used_mb=0`; after loading, `used_mb=1024`.
+
+<Callout type="success" title="Why this distinction matters">
+This separation makes it easy to reason about two layers of state: engine load state controls the reported device telemetry, while `DeviceMemory` models an independent allocator contract.
+</Callout>
 
 A separate `DeviceMemory` wrapper assumes an independent memory pool.
 
