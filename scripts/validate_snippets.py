@@ -7,16 +7,20 @@ import os
 from pathlib import Path
 import re
 import sys
+import textwrap
 import traceback
 
 
-FENCE_RE = re.compile(r"```python[^\n]*\n([\s\S]*?)\n```", re.MULTILINE)
+FENCE_RE = re.compile(
+    r"^([ \t]*)```python[^\n]*\n([\s\S]*?)^\1```[ \t]*$",
+    re.MULTILINE,
+)
 
 
 def _extract_python_snippets(content: str) -> list[tuple[int, str]]:
     snippets: list[tuple[int, str]] = []
     for match in FENCE_RE.finditer(content):
-        code = match.group(1)
+        code = textwrap.dedent(match.group(2).expandtabs())
         start_line = content.count("\n", 0, match.start()) + 1
         snippets.append((start_line, code))
     return snippets
