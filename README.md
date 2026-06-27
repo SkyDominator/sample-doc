@@ -1,152 +1,178 @@
 # nano-llm-engine
 
-Docs-as-code portfolio project for a mock LLM inference SDK.
+`nano-llm-engine` is a small docs-as-code portfolio project.
+It includes:
 
-## Why this project exists
+- a mock Python SDK for an LLM inference engine
+- a docs site built with Next.js and Fumadocs
+- automation for API generation, translation, snippet validation, and CI/CD
 
-This repository demonstrates a technical-writer-led documentation platform where docs are treated as versioned, testable artifacts.
-The workflow mirrors fast-moving SDK teams by validating examples in CI, auto-generating API references from source, and snapshotting versioned docs on release tags.
+This is a **mock example project**, not a real inference runtime.
+Its goal is to show how source code, documentation, and validation can stay in sync.
 
-## Pipeline architecture
+## What is inside this repo?
 
-1. Python SDK source changes in `sdk/nano_llm`.
-2. `scripts/generate_api.py` regenerates `docs/content/docs/api/*.mdx` by parsing SDK modules, public API signatures, docstrings, exported types, raised exceptions, and reusable python snippets from the docs corpus.
-3. Apply the change of `docs/content/docs/api/*.mdx` in the other docs (guides, migration, trouble shooting, etc.) `docs/content/docs/**/*.mdx` using LLM agent.
-4. `scripts/translate_docs.py` generates `*.en.mdx` from Korean source docs using Google Translation API.
-    1. For testing, you can run `TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py` to copy Korean source docs into English outputs without external API calls.
-5. `scripts/validate_snippets.py` executes python snippets in MDX against the mock SDK.
-6. Next.js/Fumadocs build verifies that all docs render correctly.
-7. Lychee checks broken links in built HTML.
-8. Tag-based workflow freezes docs into `docs/content/docs/[vX.Y.Z]/`.
+- `sdk/`: the Python package for the mock inference SDK
+- `docs/`: the documentation website
+- `scripts/`: helper scripts for API docs, translation, and snippet validation
+- `.github/workflows/`: GitHub Actions workflows for validation and deployment
 
-## Local setup
+## What can you learn from this project?
 
-### Prerequisites
+- how to document a small Python SDK
+- how to write guides, tutorials, troubleshooting pages, and API references in MDX
+- how to validate runnable code snippets in CI
+- how to deploy a docs site automatically with GitHub Actions
 
-- Python 3.10+
-- Node.js 20+
-- pnpm 9+
-- Rust toolchain (for optional `nano_llm_rs` extension)
+## Quick start
 
-### Install Python packages for the pipeline
+### 1. Prerequisites
 
-From the repository root, install the SDK in editable mode with its dev extras:
+You need:
+
+- Python 3.10 or newer
+- Node.js 20 or newer
+- pnpm 9 or newer
+
+Rust is optional. The project can run without the Rust extension.
+
+### 2. Install Python dependencies
+
+From the repository root:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e './sdk[dev]'
 ```
 
-That single install covers the local Python workflow:
+This installs the SDK and the tools used by the docs pipeline.
 
-- `pydantic` and `typing-extensions` for the `nano_llm` package itself
-- `pytest` and `pytest-cov` for `sdk/tests/`
-- `griffe` for `scripts/generate_api.py`
-- `ruff` and `mypy` for the same lint and type-check steps used in CI
-
-`scripts/translate_docs.py` uses the Python standard library plus `.env.local`, and `scripts/validate_snippets.py` only needs the editable SDK install. You do not need extra local packages such as `requests` or `pyyaml` for the current checked-in pipeline scripts.
-
-### Test the SDK
+### 3. Install docs dependencies
 
 ```bash
-pytest sdk/tests/ -v
+pnpm --prefix docs install --frozen-lockfile
 ```
 
-### Run docs automation scripts
+### 4. Run local checks
 
-#### Generate API reference docs
-
-Run the generator from the repository root.
+Run the SDK tests:
 
 ```bash
-python scripts/generate_api.py
+python -m pytest sdk/tests/ -v
 ```
 
-The output format is:
+Run the docs snippet validator:
 
-```text
-generate_api.py: ko:engine=False en:engine=False
+```bash
+MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
 ```
 
-- `True`: the generator rewrote that output file.
-- `False`: the generated output already matched the current file, so nothing changed.
+### 5. Start the docs site
 
-#### How target discovery works
+```bash
+pnpm --prefix docs dev
+```
 
-By default, the generator resolves targets in this order:
+Open the site in your browser:
 
-1. Explicit `--target` arguments.
-2. Existing files under `docs/content/docs/api/*.mdx`.
-3. Automatic discovery of public APIs under `sdk/<package>`.
+- Korean docs: `http://localhost:3000/ko/docs`
+- English docs: `http://localhost:3000/en/docs`
 
-If an API page already exists, the script treats it as the generation target. When no explicit target metadata is present, it infers the Python module from the file slug.
+## Common commands
 
-#### Common commands
-
-Generate all discovered API pages:
+### Generate API reference pages
 
 ```bash
 python scripts/generate_api.py
 ```
 
-Generate only English output:
+This updates the API MDX pages under `docs/content/docs/api/`.
+
+### Generate English docs
+
+With translation credentials:
 
 ```bash
-python scripts/generate_api.py --languages en
+python scripts/translate_docs.py
 ```
 
-Generate an explicit module target:
+Without external credentials, use mock mode:
 
 ```bash
-python scripts/generate_api.py --target nano_llm.engine=engine
+TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 ```
 
-Generate an explicit symbol target inside a module:
+### Build the docs site
 
 ```bash
-python scripts/generate_api.py --target nano_llm.engine:NanoLLMEngine=engine
+pnpm --prefix docs build
 ```
 
-Point the generator at another package root:
+### Validate runnable Python snippets
 
 ```bash
-python scripts/generate_api.py \
-    --package nano_llm \
-    --sdk-root sdk \
-    --docs-root docs/content/docs
+MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
 ```
 
-#### Disambiguation for edge cases
+## Recommended local workflow
 
-Real-world SDK modules often expose more than one plausible public API surface. When the generator cannot safely infer which class, function, or attribute a page should document, add an `api-target` field to the API page frontmatter.
+When you change code or docs, use this order:
 
-```md
----
-title: "API Reference: NanoLLMEngine"
-description: "Auto-generated API reference for NanoLLMEngine"
-api-target: nano_llm.engine:NanoLLMEngine
----
+1. Edit the SDK or the docs.
+2. Regenerate API docs if the SDK changed.
+3. Regenerate English docs if the Korean source docs changed.
+4. Run snippet validation.
+5. Run SDK tests.
+6. Preview the docs site locally.
+
+Example:
+
+```bash
+python scripts/generate_api.py
+TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
+MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
+python -m pytest sdk/tests/ -v
+pnpm --prefix docs dev
 ```
 
-Use `api-target` when:
+## How the mock SDK works
 
-- one module exposes multiple public classes or functions
-- the docs slug does not match the source symbol name
-- you want one file to lock to one exact symbol regardless of future module changes
+The SDK is intentionally simple.
 
-#### Edge case handling built into the generator
+- `NanoLLMEngine` simulates loading a model, generating text, streaming tokens, reading device memory, and unloading.
+- `MOCK_RNGD_HARDWARE=true` is required before `load_to_device()` succeeds.
+- `quantization`, `KVCacheConfig`, and `InferenceConfig` give the SDK a realistic LLM-inference shape.
+- `generate_streaming()` splits the generated string by whitespace. It does not perform real tokenization.
 
-The generator already handles:
+## CI/CD overview
 
-- class, function, and public attribute/type-alias pages with different render paths
-- ambiguous modules by failing fast and asking for `api-target`
-- imported aliases that do not resolve cleanly outside the package
-- cross-module related type resolution
-- exception extraction from docstrings
-- example extraction from existing non-API docs
-- locale-specific output files (`*.mdx`, `*.en.mdx`)
+This repository uses two GitHub Actions workflows.
 
-Store translation secrets in a gitignored local file before running the translation step.
+### Docs CI
+
+`docs-ci.yml` runs on pushes to `main` and does the following:
+
+1. installs Python dependencies
+2. runs lint and type checks
+3. runs SDK tests
+4. regenerates API docs
+5. generates English docs
+6. validates Python snippets in MDX
+7. builds the docs site
+8. checks built HTML for broken links
+
+### Docs Release
+
+`docs-release.yml` runs after a successful `Docs CI` run on `main`, or by manual dispatch.
+It builds a static export of the docs site and deploys it to GitHub Pages.
+
+## Notes about translation
+
+The translation script reads local credentials from `.env.local` if that file exists.
+
+Example:
 
 ```bash
 cat > .env.local <<'EOF'
@@ -155,104 +181,21 @@ GOOGLE_TRANSLATE_PROJECT_ID=your_project_id_here
 GOOGLE_TRANSLATE_LOCATION=global
 GOOGLE_TRANSLATE_GLOSSARY=KV cache,quantization,batching,token
 EOF
-chmod 600 .env.local
 ```
 
-The translation script automatically loads `.env.local` if it exists.
-
-If you do not have translation credentials yet, you can run a temporary mock mode that copies Korean source docs into English outputs.
+If you are only testing the pipeline, mock mode is enough:
 
 ```bash
-python scripts/generate_api.py
-python scripts/validate_snippets.py
-python scripts/translate_docs.py
-
-# temporary demo mode without Google API credentials
 TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 ```
 
-### Local showcase: end-to-end flow
+## Project goal
 
-Run the local showcase from the repository root. This flow is intended to demonstrate the full docs-as-code cycle without doing a production build.
+This repository is designed to show a beginner-friendly but realistic documentation workflow:
 
-The docs project includes `docs/pnpm-workspace.yaml` with `allowBuilds` entries for `esbuild` and `sharp`, so `pnpm --prefix docs install` should work without an interactive `pnpm approve-builds` step on pnpm v11.
+- source code and docs live together
+- examples are executable
+- broken links are checked automatically
+- docs are deployed through CI/CD
 
-1. Create and activate a local Python environment.
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e './sdk[dev]'
-pnpm --prefix docs install
-```
-
-1. Make a source or docs change.
-
-    - Example source change: `sdk/nano_llm/engine.py`
-    - Example docs change: `docs/content/docs/guides/*.mdx`
-
-1. Regenerate API reference docs from source.
-
-```bash
-python scripts/generate_api.py
-```
-
-1. Propagate API changes to the other docs pages.
-
-- Update guides, tutorials, migration notes, and troubleshooting pages under `docs/content/docs/**`.
-- This can be done manually or with an LLM-assisted authoring workflow.
-
-1. Generate English docs.
-
-```bash
-# real translation when credentials are configured
-python scripts/translate_docs.py
-
-# portfolio/demo fallback without external API calls
-TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
-```
-
-1. Execute and validate runnable Python snippets.
-
-```bash
-MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
-pytest sdk/tests/ -v
-```
-
-1. Start localhost preview for the docs site.
-
-```bash
-pnpm --prefix docs dev
-```
-
-For the local showcase, use the preview server instead of a production build. The CI workflow remains responsible for `pnpm --prefix docs build`.
-
-1. Open the preview in your browser.
-
-- Default URL: `http://localhost:3000`
-- Review the changed guides, API reference pages, and translated English outputs.
-
-1. Repeat the regeneration, validation, and preview cycle until the docs and source stay in sync.
-
-## Project structure
-
-- `sdk/`: Python mock inference SDK
-- `sdk-rs/`: Rust PyO3 module for device-memory helper
-- `docs/`: Next.js + Fumadocs documentation site
-- `scripts/`: API generation, translation, and snippet validation
-- `.github/workflows/`: CI and release workflows
-
-## CI/CD workflows
-
-- `docs-ci.yml`: lint, test, API generation, translation, snippet execution, docs build, link check
-- `docs-release.yml`: release-tag trigger and docs snapshot freeze
-
-When GitHub translation secrets are unavailable, `docs-ci.yml` falls back to `TRANSLATE_MOCK_MODE=true` so the full docs pipeline can still be demonstrated end to end. This fallback is intended for portfolio rehearsal, offline demos, and CI smoke checks rather than production translation quality.
-
-## Local secret handling
-
-- Use `.env.local` for local-only credentials.
-- `.env.local` is ignored by git.
-- Prefer `chmod 600 .env.local` on shared machines.
-- Do not store API keys in committed files or screenshots.
+If you are new to docs-as-code, start with the local preview and the guides under `docs/content/docs/guides/`.
