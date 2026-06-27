@@ -1,7 +1,7 @@
 from .config import InferenceConfig, KVCacheConfig, QuantizationType
 from .device import DeviceMemory
 from .engine import NanoLLMEngine
-from .errors import DeviceNotFoundError, GenerationError, ModelLoadError, NanoLLMError
+from .errors import DeviceNotFoundError, GenerationError, NanoLLMError
 
 __all__ = [
     "NanoLLMEngine",
@@ -11,6 +11,5 @@ __all__ = [
     "DeviceMemory",
     "NanoLLMError",
     "DeviceNotFoundError",
-    "ModelLoadError",
     "GenerationError",
 ]
