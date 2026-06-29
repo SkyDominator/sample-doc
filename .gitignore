@@ -21,3 +21,7 @@ target/
 # OS / Editor
 .DS_Store
 .vscode/
+
+# Graphify
+
+graphify-out/
