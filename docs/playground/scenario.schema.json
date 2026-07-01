@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nano-llm-engine/docs/playground/scenario.schema.json",
+  "title": "Controlled Playground Scenario",
+  "description": "Single source of truth for one bounded, runnable docs playground. The same scenario file is consumed by the MDX playground component (interactive rendering) and by the Python validator (CI enforcement). A scenario replaces a static Python code block: it exposes a fixed code template plus an explicit, bounded control surface. Users may change only the declared controls within their declared limits. The two-layer boundary model is intentional: control min/max/values define the UI play range (soft boundary), while the SDK itself enforces correctness at runtime (hard boundary). The validator's job is to prove those two layers agree: in-range controls succeed, out-of-range controls raise the documented exception.",
+  "type": "object",
+  "required": ["id", "title", "page", "runtime", "template", "controls", "cases"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional path to this schema for editor validation."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Stable, unique scenario id. Referenced from MDX as <Playground scenario=\"...\"> and used by the validator to report results."
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable scenario title shown in the playground UI."
+    },
+    "page": {
+      "type": "string",
+      "description": "Docs page slug this scenario is embedded in, e.g. 'guides/quickstart'. Used to keep scenarios and pages traceable."
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-line description of what this playground demonstrates."
+    },
+    "runtime": {
+      "const": "python",
+      "description": "Execution runtime. Only 'python' is supported today (browser-side via Pyodide in the UI, exec in the validator)."
+    },
+    "template": {
+      "type": "string",
+      "description": "The fixed Python source. It is NOT user-editable. It executes with a pre-bound `params` dict whose keys are the control names; it must read every variable value from params[...] and must not contain hard-coded control values. This is the shared code that both the UI and the validator run."
+    },
+    "locked": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Human-readable list of the parts of the template users cannot change (imports, lifecycle order, call structure). Surfaced in the UI so limits are visible outside the code."
+    },
+    "controls": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The bounded control surface. Each control maps a params key to a real SDK parameter or environment input, with explicit allowed values or range.",
+      "items": { "$ref": "#/$defs/control" }
+    },
+    "cases": {
+      "type": "object",
+      "required": ["valid", "invalid"],
+      "additionalProperties": false,
+      "description": "The validated test matrix. Every scenario must declare at least one in-range success and one out-of-boundary failure.",
+      "properties": {
+        "valid": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/validCase" },
+          "description": "In-range control combinations that must execute successfully and match the expected output."
+        },
+        "invalid": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/invalidCase" },
+          "description": "Out-of-boundary control combinations that must raise the documented exception."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "control": {
+      "type": "object",
+      "required": ["name", "label", "type", "default", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Key used in params[...] inside the template and in every case's `controls` map."
+        },
+        "label": {
+          "type": "string",
+          "description": "UI label for this control."
+        },
+        "type": {
+          "enum": ["enum", "int", "float", "boolean", "text"],
+          "description": "Control kind. Determines which limit fields are required and how the UI renders it."
+        },
+        "default": {
+          "description": "Default value used when the playground first renders. Must satisfy this control's own limits."
+        },
+        "source": {
+          "type": "string",
+          "description": "Where this control maps in the codebase, e.g. 'nano_llm.config.InferenceConfig.max_tokens' or the 'MOCK_RNGD_HARDWARE' env var. Keeps the control honest and traceable to real code."
+        },
+        "description": {
+          "type": "string",
+          "description": "Short explanation shown next to the control."
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Allowed values. Required when type is 'enum'."
+        },
+        "min": {
+          "type": "number",
+          "description": "Inclusive lower bound. Required when type is 'int' or 'float'."
+        },
+        "max": {
+          "type": "number",
+          "description": "Inclusive upper bound. Required when type is 'int' or 'float'."
+        },
+        "max_length": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum character length. Used when type is 'text'."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "enum" } } },
+          "then": { "required": ["values"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "int" } } },
+          "then": { "required": ["min", "max"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "float" } } },
+          "then": { "required": ["min", "max"] }
+        }
+      ]
+    },
+    "validCase": {
+      "type": "object",
+      "required": ["name", "controls", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Short case id for validator reporting."
+        },
+        "controls": {
+          "type": "object",
+          "description": "Concrete in-range value for every control name.",
+          "additionalProperties": true
+        },
+        "expect": { "$ref": "#/$defs/outputExpectation" }
+      }
+    },
+    "invalidCase": {
+      "type": "object",
+      "required": ["name", "controls", "expect", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Short case id for validator reporting."
+        },
+        "controls": {
+          "type": "object",
+          "description": "Concrete out-of-boundary value for at least one control.",
+          "additionalProperties": true
+        },
+        "expect": { "$ref": "#/$defs/exceptionExpectation" },
+        "status": {
+          "enum": ["enforced", "planned"],
+          "description": "'enforced' = the SDK already raises this today. 'planned' = the boundary is designed but the SDK does not enforce it yet; the validator treats it as an expected-pending gap until SDK enforcement is added. This lets the contract land before the SDK changes."
+        }
+      }
+    },
+    "outputExpectation": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "output",
+          "description": "Successful execution is expected."
+        },
+        "stdout_contains": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Every listed fragment must appear in captured stdout."
+        },
+        "stdout_equals": {
+          "type": "string",
+          "description": "Captured stdout must equal this exact string (after trailing-newline trim)."
+        }
+      }
+    },
+    "exceptionExpectation": {
+      "type": "object",
+      "required": ["kind", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "exception",
+          "description": "A raised exception is expected."
+        },
+        "type": {
+          "type": "string",
+          "description": "Expected exception class name, e.g. 'DeviceNotFoundError' or 'ValueError'."
+        },
+        "message_contains": {
+          "type": "string",
+          "description": "Substring that must appear in the exception message."
+        }
+      }
+    }
+  }
+}

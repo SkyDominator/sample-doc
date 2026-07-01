@@ -1,0 +1,86 @@
+{
+  "$schema": "../scenario.schema.json",
+  "id": "quickstart-sync-generate",
+  "title": "동기 생성 플레이그라운드",
+  "page": "guides/quickstart",
+  "summary": "MOCK_RNGD_HARDWARE 보호 장치, quantization 라벨, 토큰 예산이 단일 generate() 결과에 어떻게 드러나는지 경계 안에서 직접 바꿔 봅니다.",
+  "runtime": "python",
+  "template": "import os\n\nfrom nano_llm import InferenceConfig, NanoLLMEngine\n\n# params는 플레이그라운드 런타임이 컨트롤 값으로 주입합니다. 이 코드는 편집할 수 없습니다.\nif params[\"mock_hardware\"]:\n    os.environ[\"MOCK_RNGD_HARDWARE\"] = \"true\"\nelse:\n    os.environ.pop(\"MOCK_RNGD_HARDWARE\", None)\n\nengine = NanoLLMEngine(\n    model_path=\"models/mock-llm.bin\",\n    quantization=params[\"quantization\"],\n)\nengine.load_to_device(device_id=0)\n\nresult = engine.generate(\n    params[\"prompt\"],\n    InferenceConfig(max_tokens=params[\"max_tokens\"]),\n)\nprint(result)\n\nengine.unload()\n",
+  "locked": [
+    "import 문",
+    "엔진 생성과 load_to_device/unload 수명주기 순서",
+    "generate() 호출 구조"
+  ],
+  "controls": [
+    {
+      "name": "quantization",
+      "label": "Quantization",
+      "type": "enum",
+      "values": ["INT4", "INT8", "FP16", "FP32"],
+      "default": "INT8",
+      "source": "nano_llm.config.QuantizationType",
+      "description": "생성 결과 접두사 [mock:{quantization}:...]에 그대로 반영되는 양자화 라벨입니다."
+    },
+    {
+      "name": "max_tokens",
+      "label": "Max tokens",
+      "type": "int",
+      "min": 1,
+      "max": 512,
+      "default": 64,
+      "source": "nano_llm.config.InferenceConfig.max_tokens",
+      "description": "출력 접두사 tokens=N에 반영되는 토큰 예산입니다. 범위를 벗어나면 SDK가 예외를 발생시켜야 합니다."
+    },
+    {
+      "name": "mock_hardware",
+      "label": "Mock hardware present",
+      "type": "boolean",
+      "default": true,
+      "source": "MOCK_RNGD_HARDWARE env var",
+      "description": "false면 load_to_device()가 DeviceNotFoundError를 발생시키는 보호 장치를 확인합니다."
+    },
+    {
+      "name": "prompt",
+      "label": "Prompt",
+      "type": "text",
+      "max_length": 200,
+      "default": "hello",
+      "source": "nano_llm.engine.NanoLLMEngine.generate(prompt=...)",
+      "description": "생성 요청 프롬프트입니다. mock 엔진은 이 문자열을 접두사 뒤에 그대로 이어 붙입니다."
+    }
+  ],
+  "cases": {
+    "valid": [
+      {
+        "name": "int8-small-budget",
+        "controls": { "quantization": "INT8", "max_tokens": 64, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "output", "stdout_contains": ["[mock:INT8:tokens=64] hello"] }
+      },
+      {
+        "name": "fp16-larger-budget",
+        "controls": { "quantization": "FP16", "max_tokens": 128, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "output", "stdout_contains": ["[mock:FP16:tokens=128] hello"] }
+      }
+    ],
+    "invalid": [
+      {
+        "name": "missing-hardware",
+        "status": "enforced",
+        "controls": { "quantization": "INT8", "max_tokens": 64, "mock_hardware": false, "prompt": "hello" },
+        "expect": { "kind": "exception", "type": "DeviceNotFoundError", "message_contains": "mock hardware not found" }
+      },
+      {
+        "name": "tokens-below-range",
+        "status": "planned",
+        "controls": { "quantization": "INT8", "max_tokens": 0, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "exception", "type": "ValueError", "message_contains": "max_tokens" }
+      },
+      {
+        "name": "tokens-above-range",
+        "status": "planned",
+        "controls": { "quantization": "INT8", "max_tokens": 100000, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "exception", "type": "ValueError", "message_contains": "max_tokens" }
+      }
+    ]
+  }
+}
