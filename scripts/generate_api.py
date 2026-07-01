@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 import sys
-from typing import Any, Literal, get_args
+from typing import Any, Literal
 
 from griffe import load
 
