@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Callout } from "@/components/ui/callout";
 import { DocsCodeBlock } from "@/components/mdx-code-block";
+import { Playground } from "@/components/playground";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function isExternalHref(href) {
@@ -57,6 +58,7 @@ export function getMDXComponents(components = {}) {
     CardTitle,
     Cards,
     Callout,
+    Playground,
     Tabs,
     TabsContent,
     TabsList,

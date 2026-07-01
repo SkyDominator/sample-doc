@@ -34,29 +34,7 @@ Use the tabs below when you want to compare the smallest synchronous flow agains
 
   This path shows the full flow from engine creation through one blocking `generate()` call.
 
-  ```python
-  import os
-
-  from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
-
-  os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-  engine = NanoLLMEngine(
-	  model_path="models/mock-llm.bin",
-	  quantization="INT8",
-	  kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),
-  )
-
-  engine.load_to_device(device_id=0)
-
-  result = engine.generate(
-	  prompt="Explain how the INT8 setting and token budget appear in the output string.",
-	  config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
-  )
-
-  print(result)
-  engine.unload()
-  ```
+  <Playground scenario="quickstart-sync-generate" />
 
   </TabsContent>
 

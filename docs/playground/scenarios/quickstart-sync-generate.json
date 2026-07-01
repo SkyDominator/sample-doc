@@ -71,13 +71,13 @@
       },
       {
         "name": "tokens-below-range",
-        "status": "planned",
+        "status": "enforced",
         "controls": { "quantization": "INT8", "max_tokens": 0, "mock_hardware": true, "prompt": "hello" },
         "expect": { "kind": "exception", "type": "ValueError", "message_contains": "max_tokens" }
       },
       {
         "name": "tokens-above-range",
-        "status": "planned",
+        "status": "enforced",
         "controls": { "quantization": "INT8", "max_tokens": 100000, "mock_hardware": true, "prompt": "hello" },
         "expect": { "kind": "exception", "type": "ValueError", "message_contains": "max_tokens" }
       }

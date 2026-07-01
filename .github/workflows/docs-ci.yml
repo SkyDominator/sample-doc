@@ -55,6 +55,14 @@ jobs:
           MOCK_RNGD_HARDWARE: "true"
         run: python scripts/validate_snippets.py
 
+      - name: Validate playground scenarios against mock SDK
+        env:
+          MOCK_RNGD_HARDWARE: "true"
+        run: python scripts/validate_playgrounds.py
+
+      - name: Bundle SDK sources for the playground
+        run: python scripts/bundle_sdk_for_playground.py
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:

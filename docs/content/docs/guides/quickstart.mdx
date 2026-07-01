@@ -34,29 +34,7 @@ pip install -e ./sdk
 
 	이 경로는 엔진 생성부터 한 번의 `generate()` 호출까지 이어지는 가장 기본적인 실행 흐름입니다.
 
-	```python
-	import os
-
-	from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
-
-	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-	engine = NanoLLMEngine(
-			model_path="models/mock-llm.bin",
-			quantization="INT8",
-			kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),
-	)
-
-	engine.load_to_device(device_id=0)
-
-	result = engine.generate(
-			prompt="INT8 설정과 토큰 예산이 출력 문자열에 어떻게 드러나는지 설명해줘.",
-			config=InferenceConfig(batch_size=1, max_tokens=64, temperature=0.2),
-	)
-
-	print(result)
-	engine.unload()
-	```
+	<Playground scenario="quickstart-sync-generate" />
 
 	</TabsContent>
 
