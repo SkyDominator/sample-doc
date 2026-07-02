@@ -69,6 +69,12 @@ Run the docs snippet validator:
 MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
 ```
 
+Run the playground contract validator:
+
+```bash
+MOCK_RNGD_HARDWARE=true python scripts/validate_playgrounds.py
+```
+
 ### 5. Start the docs site
 
 ```bash
@@ -116,6 +122,12 @@ pnpm --prefix docs build
 MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
 ```
 
+### Validate playground scenarios
+
+```bash
+MOCK_RNGD_HARDWARE=true python scripts/validate_playgrounds.py
+```
+
 ## Recommended local workflow
 
 When you change code or docs, use this order:
@@ -124,8 +136,9 @@ When you change code or docs, use this order:
 2. Regenerate API docs if the SDK changed.
 3. Regenerate English docs if the Korean source docs changed.
 4. Run snippet validation.
-5. Run SDK tests.
-6. Preview the docs site locally.
+5. Run playground validation.
+6. Run SDK tests.
+7. Preview the docs site locally.
 
 Example:
 
@@ -133,6 +146,7 @@ Example:
 python scripts/generate_api.py
 TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
+MOCK_RNGD_HARDWARE=true python scripts/validate_playgrounds.py
 python -m pytest sdk/tests/ -v
 pnpm --prefix docs dev
 ```
@@ -152,7 +166,7 @@ This repository uses two GitHub Actions workflows.
 
 ### Docs CI
 
-`docs-ci.yml` runs on pushes to `main` and does the following:
+`docs-ci.yml` runs on pushes to `main`, pull requests targeting `main`, and manual dispatches. It does the following:
 
 1. installs Python dependencies
 2. runs lint and type checks
@@ -160,13 +174,16 @@ This repository uses two GitHub Actions workflows.
 4. regenerates API docs
 5. generates English docs
 6. validates Python snippets in MDX
-7. builds the docs site
-8. checks built HTML for broken links
+7. validates playground contracts against the mock SDK
+8. bundles the browser SDK sources used by the playground
+9. fails if generated docs artifacts were not committed
+10. builds the docs site
+11. checks built HTML for broken links
 
 ### Docs Release
 
 `docs-release.yml` runs after a successful `Docs CI` run on `main`, or by manual dispatch.
-It builds a static export of the docs site and deploys it to GitHub Pages.
+It re-runs docs generation and both validation phases, verifies generated artifacts are committed, then builds a static export of the docs site and deploys it to GitHub Pages.
 
 ## Notes about translation
 
