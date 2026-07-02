@@ -5,7 +5,7 @@ description: End-to-end inference pipeline example
 
 # Inference Pipeline
 
-This tutorial follows the flow of initializing a `NanoLLMEngine` instance, running generation and streaming requests, inspecting memory state and error paths, and then closing the session.
+This tutorial follows the flow of initializing a `RayKimLLMEngine` instance, running generation and streaming requests, inspecting memory state and error paths, and then closing the session.
 
 <Callout type="info" title="Read this as one guided session">
 This page is meant to be followed top to bottom. Each section isolates one checkpoint in the runtime so you can tell whether request execution, memory inspection, and shutdown are behaving as expected.
@@ -22,10 +22,10 @@ This page is meant to be followed top to bottom. Each section isolates one check
 
 ```python
 import os
-from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, KVCacheConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(
+engine = RayKimLLMEngine(
     model_path="models/mock-llm.bin",
     quantization="INT8",
     kv_cache_config=KVCacheConfig(max_seq_len=8192, cache_dtype="fp16"),
@@ -47,10 +47,10 @@ engine.load_to_device(device_id=0)
 
     ```python
     import os
-    from nano_llm import InferenceConfig, NanoLLMEngine
+    from raykim_llm import InferenceConfig, RayKimLLMEngine
 
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
-    engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+    engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
     engine.load_to_device(device_id=0)
 
     cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
@@ -70,10 +70,10 @@ engine.load_to_device(device_id=0)
 
     ```python
     import os
-    from nano_llm import InferenceConfig, NanoLLMEngine
+    from raykim_llm import InferenceConfig, RayKimLLMEngine
 
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
-    engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+    engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
     engine.load_to_device(device_id=0)
 
     for token in engine.generate_streaming(
@@ -104,10 +104,10 @@ engine.load_to_device(device_id=0)
 
     ```python
     import os
-    from nano_llm import NanoLLMEngine
+    from raykim_llm import RayKimLLMEngine
 
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
-    engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+    engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
     print(engine.get_device_memory())
 
     engine.load_to_device(0)
@@ -126,7 +126,7 @@ engine.load_to_device(device_id=0)
     This view is separate from engine load state and focuses on raw reservation behavior in the standalone memory pool abstraction.
 
     ```python
-    from nano_llm import DeviceMemory
+    from raykim_llm import DeviceMemory
 
     memory = DeviceMemory(total_bytes=32 * 1024 * 1024)
     reserved = memory.allocate(16 * 1024 * 1024)
@@ -149,11 +149,11 @@ This failure path is useful when you want to prove the environment guard is stil
 
 ```python
 import os
-from nano_llm import NanoLLMEngine
-from nano_llm.errors import DeviceNotFoundError
+from raykim_llm import RayKimLLMEngine
+from raykim_llm.errors import DeviceNotFoundError
 
 os.environ.pop("MOCK_RNGD_HARDWARE", None)
-probe = NanoLLMEngine(model_path="models/mock-llm.bin")
+probe = RayKimLLMEngine(model_path="models/mock-llm.bin")
 try:
     probe.load_to_device(0)
 except DeviceNotFoundError as exc:
@@ -164,10 +164,10 @@ except DeviceNotFoundError as exc:
 
 ```python
 import os
-from nano_llm import NanoLLMEngine
+from raykim_llm import RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()
 ```

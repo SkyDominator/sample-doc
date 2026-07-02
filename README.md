@@ -1,6 +1,6 @@
-# nano-llm-engine
+# RayKimLLM
 
-`nano-llm-engine` is a small docs-as-code portfolio project.
+`RayKimLLM` is a small docs-as-code portfolio project.
 It includes:
 
 - a mock Python SDK for an LLM inference engine
@@ -141,7 +141,7 @@ pnpm --prefix docs dev
 
 The SDK is intentionally simple.
 
-- `NanoLLMEngine` simulates loading a model, generating text, streaming tokens, reading device memory, and unloading.
+- `RayKimLLMEngine` simulates loading a model, generating text, streaming tokens, reading device memory, and unloading.
 - `MOCK_RNGD_HARDWARE=true` is required before `load_to_device()` succeeds.
 - `quantization`, `KVCacheConfig`, and `InferenceConfig` give the SDK a realistic LLM-inference shape.
 - `generate_streaming()` splits the generated string by whitespace. It does not perform real tokenization.

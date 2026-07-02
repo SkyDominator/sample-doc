@@ -33,10 +33,10 @@ This version fixes the mock output format so you can see immediately which confi
 
 ```python
 import os
-from nano_llm import InferenceConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device(0)
 
 out = engine.generate("status", InferenceConfig(max_tokens=32))

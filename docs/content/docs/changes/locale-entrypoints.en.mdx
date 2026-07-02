@@ -10,7 +10,7 @@ This update makes the runtime configuration layers clearer by separating which s
 ## What changed
 
 - Process-level configuration remains the `MOCK_RNGD_HARDWARE` environment variable.
-- Engine-level configuration is grouped in the `NanoLLMEngine(model_path, quantization, kv_cache_config)` constructor.
+- Engine-level configuration is grouped in the `RayKimLLMEngine(model_path, quantization, kv_cache_config)` constructor.
 - Request-level configuration is split into `InferenceConfig(batch_size, max_tokens, temperature)` so it can vary per call.
 - Because `KVCacheConfig` is now a separate object, cache length and storage precision can be preserved explicitly alongside the engine.
 
@@ -23,9 +23,9 @@ This update makes the runtime configuration layers clearer by separating which s
 ## Example
 
 ```python
-from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, KVCacheConfig, RayKimLLMEngine
 
-engine = NanoLLMEngine(
+engine = RayKimLLMEngine(
 	model_path="models/mock-llm.bin",
 	quantization="INT8",
 	kv_cache_config=KVCacheConfig(max_seq_len=8192, cache_dtype="fp16"),

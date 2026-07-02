@@ -1,4 +1,4 @@
-# Portfolio Project Plan: `nano-llm-engine` Docs-as-Code Pipeline
+# Portfolio Project Plan: `RayKimLLM` Docs-as-Code Pipeline
 
 **Goal:** Create a runnable, production-grade docs-as-code portfolio that demonstrates all JD requirements without full DevOps engagement.
 
@@ -42,15 +42,15 @@ Build a complete, realistic **developer-facing documentation pipeline** for a mo
 
 ### Tasks
 
-- [ ] Create GitHub repo: `nano-llm-engine`
+- [ ] Create GitHub repo: `RayKimLLM`
 - [ ] Initialize folder structure:
   ```
-  nano-llm-engine/
+  RayKimLLM/
   ├── .github/workflows/
   │   ├── docs-ci.yml              # Daily validation & checks
   │   └── docs-release.yml         # Version freeze on Git tag
   ├── sdk/                         # Python SDK
-  │   ├── nano_llm/
+  │   ├── raykim_llm/
   │   │   ├── __init__.py
   │   │   ├── config.py            # Config classes (quantization, KV cache)
   │   │   ├── engine.py            # Mock inference engine (main logic)
@@ -108,14 +108,14 @@ Build a complete, realistic **developer-facing documentation pipeline** for a mo
 
 #### Tasks
 
-- [ ] **`sdk/nano_llm/config.py`**: Define configuration classes
+- [ ] **`sdk/raykim_llm/config.py`**: Define configuration classes
   - `QuantizationType` (INT4, INT8, FP16, FP32)
   - `KVCacheConfig` (max_seq_len, cache_dtype)
   - `InferenceConfig` (batch_size, max_tokens, temperature)
   - Use Python 3.10+ dataclasses with type hints
 
-- [ ] **`sdk/nano_llm/engine.py`**: Implement mock inference engine
-  - Class `NanoLLMEngine` with methods:
+- [ ] **`sdk/raykim_llm/engine.py`**: Implement mock inference engine
+  - Class `RayKimLLMEngine` with methods:
     - `__init__(model_path, quantization, kv_cache_config)` — Initialize engine
     - `load_to_device(device_id)` → bool — Load model to mock hardware
     - `generate(prompt, config)` → str — Synchronous generation (mock output)
@@ -126,17 +126,17 @@ Build a complete, realistic **developer-facing documentation pipeline** for a mo
   - Include type hints throughout
   - Mock hardware communication via environment variable `MOCK_RNGD_HARDWARE`
 
-- [ ] **`sdk/nano_llm/errors.py`**: Define custom exceptions
-  - `NanoLLMError` (base)
+- [ ] **`sdk/raykim_llm/errors.py`**: Define custom exceptions
+  - `RayKimLLMError` (base)
   - `DeviceNotFoundError`
   - `ModelLoadError`
   - `GenerationError`
 
-- [ ] **`sdk/nano_llm/__init__.py`**: Export public API
-  - `NanoLLMEngine`, `QuantizationType`, `KVCacheConfig`, `InferenceConfig`
+- [ ] **`sdk/raykim_llm/__init__.py`**: Export public API
+  - `RayKimLLMEngine`, `QuantizationType`, `KVCacheConfig`, `InferenceConfig`
 
 - [ ] **`sdk/pyproject.toml`**: Package metadata
-  - Package name: `nano-llm-engine`
+  - Package name: `RayKimLLM`
   - Version: `1.0.0`
   - Python: `>=3.10`
   - Dependencies: `pydantic`, `typing-extensions` (minimal)
@@ -153,7 +153,7 @@ Build a complete, realistic **developer-facing documentation pipeline** for a mo
 
 - [ ] SDK is installable: `pip install ./sdk`
 - [ ] All tests pass: `pytest sdk/tests/`
-- [ ] Can import and use: `from nano_llm import NanoLLMEngine`
+- [ ] Can import and use: `from raykim_llm import RayKimLLMEngine`
 - [ ] Docstrings are parseable by `griffe`
 
 ---
@@ -188,8 +188,8 @@ Build a complete, realistic **developer-facing documentation pipeline** for a mo
   }
   ```
 
-- [ ] **Create Python wrapper**: `sdk/nano_llm/device.py`
-  - Import Rust binding via `nano_llm_rs` (or similar)
+- [ ] **Create Python wrapper**: `sdk/raykim_llm/device.py`
+  - Import Rust binding via `raykim_llm_rs` (or similar)
   - Wrap Rust functions in a Pythonic interface
   - Document how to use the Rust component
 
@@ -200,7 +200,7 @@ Build a complete, realistic **developer-facing documentation pipeline** for a mo
 #### Acceptance Criteria
 
 - [ ] Rust code compiles: `cargo build --release`
-- [ ] Python binding works: `from nano_llm.device import DeviceMemory`
+- [ ] Python binding works: `from raykim_llm.device import DeviceMemory`
 - [ ] Documented in SDK README
 
 ---
@@ -601,7 +601,7 @@ jobs:
 - [ ] Rust component complete
   - [ ] `lib.rs` with PyO3 bindings
   - [ ] `Cargo.toml` configured
-  - [ ] Python wrapper in `nano_llm/device.py`
+  - [ ] Python wrapper in `raykim_llm/device.py`
   - [ ] Tests passing
 - [ ] SDK installable and importable
 

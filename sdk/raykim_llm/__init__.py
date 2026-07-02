@@ -1,15 +1,15 @@
 from .config import InferenceConfig, KVCacheConfig, QuantizationType
 from .device import DeviceMemory
-from .engine import NanoLLMEngine
-from .errors import DeviceNotFoundError, GenerationError, NanoLLMError
+from .engine import RayKimLLMEngine
+from .errors import DeviceNotFoundError, GenerationError, RayKimLLMError
 
 __all__ = [
-    "NanoLLMEngine",
+    "RayKimLLMEngine",
     "QuantizationType",
     "KVCacheConfig",
     "InferenceConfig",
     "DeviceMemory",
-    "NanoLLMError",
+    "RayKimLLMError",
     "DeviceNotFoundError",
     "GenerationError",
 ]

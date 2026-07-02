@@ -228,7 +228,7 @@ class PageDoc:
 
 def _parse_args() -> Namespace:
     parser = ArgumentParser(description="Generate API reference MDX files from SDK source.")
-    parser.add_argument("--package", default="nano_llm", help="Top-level Python package name under sdk/.")
+    parser.add_argument("--package", default="raykim_llm", help="Top-level Python package name under sdk/.")
     parser.add_argument("--sdk-root", default="sdk", help="Path to the SDK root directory.")
     parser.add_argument("--docs-root", default="docs/content/docs", help="Path to the docs content root.")
     parser.add_argument(

@@ -5,7 +5,7 @@ description: Quantization, KV cache, and batched inference concepts
 
 # Core Concepts
 
-`nano-llm-engine` is an inference runtime example that mocks RNGD device integration.
+`RayKimLLM` is an inference runtime example that mocks RNGD device integration.
 It does not perform real model computation, but it recreates a small control surface around a runtime, including engine lifecycle, request configuration, and memory abstractions.
 
 <Callout type="info" title="Read this page as a control-surface map">
@@ -22,7 +22,7 @@ The goal here is to understand which knobs exist, where they live, and what they
 
     <TabsContent value="engine">
 
-    Engine-level settings stay attached to the `NanoLLMEngine` instance and shape the runtime identity carried across requests.
+    Engine-level settings stay attached to the `RayKimLLMEngine` instance and shape the runtime identity carried across requests.
 
     ### Quantization
 
@@ -70,7 +70,7 @@ The goal here is to understand which knobs exist, where they live, and what they
 
 ## Device Memory Abstraction
 
-`NanoLLMEngine.get_device_memory()` returns simple telemetry based on whether the engine is loaded.
+`RayKimLLMEngine.get_device_memory()` returns simple telemetry based on whether the engine is loaded.
 Before loading, `used_mb=0`; after loading, `used_mb=1024`.
 
 <Callout type="success" title="Why this distinction matters">
@@ -83,7 +83,7 @@ A separate `DeviceMemory` wrapper assumes an independent memory pool.
 - `free(bytes_size)`: raises `RuntimeError` if more bytes are released than were reserved
 - `utilization()`: returns the current utilization in the range `0.0` to `1.0`
 
-If the optional Rust extension module `nano_llm_rs` is available, its implementation is used; otherwise the wrapper falls back to the Python implementation automatically. The sample project remains fully runnable without the extension.
+If the optional Rust extension module `raykim_llm_rs` is available, its implementation is used; otherwise the wrapper falls back to the Python implementation automatically. The sample project remains fully runnable without the extension.
 
 ## Token Generation and Streaming
 
@@ -92,10 +92,10 @@ If the optional Rust extension module `nano_llm_rs` is available, its implementa
 
 ```python
 import os
-from nano_llm import InferenceConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device()
 
 for token in engine.generate_streaming(

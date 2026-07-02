@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://nano-llm-engine/docs/playground/scenario.schema.json",
+  "$id": "https://raykim-llm/docs/playground/scenario.schema.json",
   "title": "Controlled Playground Scenario",
   "description": "Single source of truth for one bounded, runnable docs playground. The same scenario file is consumed by the MDX playground component (interactive rendering) and by the Python validator (CI enforcement). A scenario replaces a static Python code block: it exposes a fixed code template plus an explicit, bounded control surface. Users may change only the declared controls within their declared limits. The two-layer boundary model is intentional: control min/max/values define the UI play range (soft boundary), while the SDK itself enforces correctness at runtime (hard boundary). The validator's job is to prove those two layers agree: in-range controls succeed, out-of-range controls raise the documented exception.",
   "type": "object",
@@ -101,7 +101,7 @@
         },
         "source": {
           "type": "string",
-          "description": "Where this control maps in the codebase, e.g. 'nano_llm.config.InferenceConfig.max_tokens' or the 'MOCK_RNGD_HARDWARE' env var. Keeps the control honest and traceable to real code."
+          "description": "Where this control maps in the codebase, e.g. 'raykim_llm.config.InferenceConfig.max_tokens' or the 'MOCK_RNGD_HARDWARE' env var. Keeps the control honest and traceable to real code."
         },
         "description": {
           "type": "string",

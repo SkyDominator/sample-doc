@@ -29,7 +29,7 @@ function SidebarPanel({
     <div className="flex h-full flex-col">
       <div className="mb-6 border-b border-slate-200 pb-5">
         <Link className="block" href={getLandingHref(currentLocale)} onClick={onNavigate}>
-          <p className="text-sm font-semibold text-slate-950">nano-llm-engine</p>
+          <p className="text-sm font-semibold text-slate-950">RayKimLLM</p>
           <p className="mt-1 text-sm text-slate-500">Docs</p>
         </Link>
 
@@ -148,10 +148,10 @@ export function DocsNavigation({ currentLocale, groups, searchItems }) {
           <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <Link className="flex items-center gap-3" href={getLandingHref(currentLocale)}>
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/10">
-                <span className="text-sm font-semibold tracking-[0.18em]">NL</span>
+                <span className="text-sm font-semibold tracking-[0.18em]">RK</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-950">nano-llm-engine</p>
+                <p className="text-sm font-semibold text-slate-950">RayKimLLM</p>
                 <p className="text-xs text-slate-500">Docs</p>
               </div>
             </Link>

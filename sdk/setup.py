@@ -9,7 +9,7 @@ RUST_MANIFEST = ROOT.parent / "sdk-rs" / "Cargo.toml"
 setup(
     rust_extensions=[
         RustExtension(
-            "nano_llm_rs",
+            "raykim_llm_rs",
             path=str(RUST_MANIFEST),
             binding=Binding.PyO3,
             optional=True,

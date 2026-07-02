@@ -5,7 +5,7 @@ description: 양자화, KV cache, 배치 추론 개념
 
 # 핵심 개념
 
-`nano-llm-engine`는 RNGD 장치 연동을 모의한 추론 런타임 예제입니다.
+`RayKimLLM`는 RNGD 장치 연동을 모의한 추론 런타임 예제입니다.
 실제 모델 계산을 수행하지는 않지만, 엔진 수명주기와 요청 설정, 메모리 추상화처럼 런타임을 둘러싼 제어면을 작게 재현합니다.
 
 <Callout type="info" title="이 페이지를 보는 관점">
@@ -22,7 +22,7 @@ description: 양자화, KV cache, 배치 추론 개념
 
     <TabsContent value="engine">
 
-    엔진 수준 설정은 `NanoLLMEngine` 인스턴스에 붙어 여러 요청에 걸쳐 런타임의 정체성을 유지합니다.
+    엔진 수준 설정은 `RayKimLLMEngine` 인스턴스에 붙어 여러 요청에 걸쳐 런타임의 정체성을 유지합니다.
 
     ### 양자화(Quantization)
 
@@ -70,7 +70,7 @@ description: 양자화, KV cache, 배치 추론 개념
 
 ## 장치 메모리 추상화
 
-`NanoLLMEngine.get_device_memory()`는 엔진이 로드되었는지에 따라 간단한 텔레메트리를 반환합니다.
+`RayKimLLMEngine.get_device_memory()`는 엔진이 로드되었는지에 따라 간단한 텔레메트리를 반환합니다.
 로드 전에는 `used_mb=0`, 로드 후에는 `used_mb=1024`가 됩니다.
 
 <Callout type="success" title="이 구분이 중요한 이유">
@@ -83,7 +83,7 @@ description: 양자화, KV cache, 배치 추론 개념
 - `free(bytes_size)`: 기존 예약량보다 더 많이 해제하려고 하면 `RuntimeError`
 - `utilization()`: 현재 사용률을 `0.0`~`1.0` 범위로 반환
 
-선택적 Rust 확장 모듈 `nano_llm_rs`가 있으면 그 구현을 사용하고, 없으면 Python 구현으로 자동 폴백합니다. 이 샘플 프로젝트는 확장 모듈 없이도 전체 흐름을 실행할 수 있습니다.
+선택적 Rust 확장 모듈 `raykim_llm_rs`가 있으면 그 구현을 사용하고, 없으면 Python 구현으로 자동 폴백합니다. 이 샘플 프로젝트는 확장 모듈 없이도 전체 흐름을 실행할 수 있습니다.
 
 ## 토큰 생성과 스트리밍
 
@@ -92,10 +92,10 @@ description: 양자화, KV cache, 배치 추론 개념
 
 ```python
 import os
-from nano_llm import InferenceConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device()
 
 for token in engine.generate_streaming(

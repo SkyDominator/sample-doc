@@ -60,7 +60,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nano_llm_rs"
+name = "raykim_llm_rs"
 version = "0.1.0"
 dependencies = [
  "pyo3",

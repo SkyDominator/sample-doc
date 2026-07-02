@@ -4,8 +4,8 @@ import { unstable_rootParams } from "next/server";
 import { DEFAULT_DOC_LOCALE, isValidDocLocale } from "@/lib/docs";
 
 export const metadata = {
-  title: "nano-llm-engine",
-  description: "Docs-as-code portfolio for a mock LLM inference SDK.",
+  title: "RayKimLLM",
+  description: "Docs-as-code portfolio for the RayKimLLM mock inference SDK.",
 };
 
 export default async function RootLayout({ children, params }) {
