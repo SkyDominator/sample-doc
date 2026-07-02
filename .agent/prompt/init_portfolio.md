@@ -125,7 +125,7 @@ I researched online with AI about the strategy to create a sample portfolio for 
 
 이유: 공유해주신 Job Description(JD)을 보니 회사가 요구하는 핵심 역량과 도메인이 매우 명확하네요. 이 포지션은 단순히 글을 쓰는 Tech Writer가 아니라, AI 하드웨어(NPU)와 LLM 추론(Inference) 엔진의 특성을 이해하고 이를 자동화된 파이프라인으로 검증할 수 있는 'Docs 엔지니어'를 찾고 있습니다.
 
-## 🎯 포트폴리오 프로젝트 컨셉: `nano-llm-engine` & SDK
+## 🎯 포트폴리오 프로젝트 컨셉: `RayKimLLM` & SDK
 
 실제 AI 가속기(NPU)가 작동하는 것처럼 시뮬레이션하는 **가짜(Mock) LLM 추론 백엔드**와 이를 제어하는 **Python SDK**를 만듭니다. (실제 모델을 돌릴 필요는 없고, API 구조와 옵션만 리얼하게 흉내 냅니다.)
 
@@ -148,7 +148,7 @@ Fumadocs의 다국어(i18n) 파일 규칙(`.en.mdx`)과 멀티 버전 폴더 구
 │   ├── docs-ci.yml              # 1️⃣ PR/Push 시 작동하는 검증 & 번역 파이프라인
 │   └── docs-release.yml         # 2️⃣ Git Tag(릴리즈) 시 작동하는 버전 동결 파이프라인
 ├── sdk/                         # Python 기반 가상 LLM 추론 SDK
-│   ├── nano_llm/
+│   ├── raykim_llm/
 │   │   ├── __init__.py
 │   │   ├── config.py            # KV Cache, Quantization 등의 정의
 │   │   └── engine.py            # 추론 엔진 소스 (PyDoc 주석 포함)
@@ -174,17 +174,17 @@ Fumadocs의 다국어(i18n) 파일 규칙(`.en.mdx`)과 멀티 버전 폴더 구
 
 ---
 
-## 🐍 2. SDK 소스 코드 구현 (`sdk/nano_llm/engine.py`)
+## 🐍 2. SDK 소스 코드 구현 (`sdk/raykim_llm/engine.py`)
 
 면접관들에게 익숙한 LLM 가속화 개념(Quantization, KV Cache)을 포함하고, 파이프라인이 파싱할 수 있도록 엄격한 Google 스타일 Docstring을 작성합니다.
 
 ```python
-# sdk/nano_llm/engine.py
+# sdk/raykim_llm/engine.py
 from typing import Generator, Optional
 from .config import KVCacheConfig, QuantizationType
 
-class NanoLLMEngine:
-    """NanoLLMEngine은 가상 NPU 하드웨어 위에서 대규모 언어 모델(LLM)의 
+class RayKimLLMEngine:
+    """RayKimLLMEngine은 가상 NPU 하드웨어 위에서 대규모 언어 모델(LLM)의 
     고속 가속 추론을 제어하는 메인 런타임 클래스입니다.
     """
 

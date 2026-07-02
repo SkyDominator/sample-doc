@@ -1,38 +1,52 @@
 ---
-title: "API 레퍼런스: NanoLLMEngine"
-description: "NanoLLMEngine 클래스와 관련 설정 타입"
+title: "API 레퍼런스: RayKimLLMEngine"
+description: "RayKimLLMEngine 클래스와 관련 설정 타입"
 ---
 
-# NanoLLMEngine
+# RayKimLLMEngine
 
-`NanoLLMEngine`는 RNGD 장치 수명주기를 흉내 내는 모의 추론 엔진입니다.
+`RayKimLLMEngine`는 RNGD 장치 수명주기를 흉내 내는 모의 추론 엔진입니다.
 인스턴스 생성, 장치 로드, 동기/스트리밍 생성, 메모리 조회, 세션 해제까지의 기본 흐름을 제공합니다.
 
 ## 빠른 시작
 
-#### 예제
+<Tabs defaultValue="sync">
+	<TabsList>
+		<TabsTrigger value="sync">동기 생성</TabsTrigger>
+		<TabsTrigger value="streaming">스트리밍 생성</TabsTrigger>
+	</TabsList>
 
-```python
-import os
+	<TabsContent value="sync">
 
-from nano_llm import NanoLLMEngine
+	이 경로는 엔진 생성부터 한 번의 `generate()` 호출까지 이어지는 가장 기본적인 실행 흐름입니다.
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	<Playground scenario="quickstart-sync-generate" />
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
+	</TabsContent>
 
-engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+	<TabsContent value="streaming">
 
-engine.unload()
-```
+	이 경로는 같은 mock 출력을 `generate_streaming()`이 반환하는 토큰 스트림 형태로 확인할 때 사용합니다.
 
+	<Playground scenario="quickstart-streaming-generate" />
+
+	</TabsContent>
+</Tabs>
+
+## 사용 순서
+
+1. `RayKimLLMEngine(...)`로 인스턴스를 생성합니다.
+2. `load_to_device()` - 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
+3. `generate()` - 동기 mock 생성 요청을 실행합니다.
+4. `generate_streaming()` - mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
+5. `get_device_memory()` - 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
+6. `unload()` - 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
+
+{/* API-GENERATED:START */}
 ## 생성자
 
 ```text
-NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
+RayKimLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 ```
 
 ### 매개변수
@@ -43,15 +57,6 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 | `quantization` | `QuantizationType` | `'FP16'` | 생성 결과 접두사에 반영되는 양자화 라벨입니다. |
 | `kv_cache_config` | `KVCacheConfig | None` | `None` | 엔진 인스턴스에 보관할 KV cache 설정 객체입니다. |
 
-## 사용 순서
-
-1. `NanoLLMEngine(...)`로 인스턴스를 생성합니다.
-2. `load_to_device()` - 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
-3. `generate()` - 동기 mock 생성 요청을 실행합니다.
-4. `generate_streaming()` - mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
-5. `get_device_memory()` - 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
-6. `unload()` - 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
-
 ## 메서드
 
 ### `load_to_device(device_id=0)`
@@ -59,7 +64,7 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
 
 ```text
-NanoLLMEngine.load_to_device(device_id=0) -> bool
+RayKimLLMEngine.load_to_device(device_id=0) -> bool
 ```
 
 #### 매개변수
@@ -82,17 +87,15 @@ NanoLLMEngine.load_to_device(device_id=0) -> bool
 
 ```python
 import os
+from raykim_llm import InferenceConfig, KVCacheConfig, RayKimLLMEngine
 
-from nano_llm import NanoLLMEngine
-from nano_llm.errors import DeviceNotFoundError
-
-os.environ.pop("MOCK_RNGD_HARDWARE", None)
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-try:
-	engine.load_to_device(0)
-except DeviceNotFoundError as exc:
-	print(f"예상된 오류: {exc}")
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
+engine = RayKimLLMEngine(
+    model_path="models/mock-llm.bin",
+    quantization="INT8",
+    kv_cache_config=KVCacheConfig(max_seq_len=8192, cache_dtype="fp16"),
+)
+engine.load_to_device(device_id=0)
 ```
 
 ### `generate(prompt, config=None)`
@@ -100,7 +103,7 @@ except DeviceNotFoundError as exc:
 동기 mock 생성 요청을 실행합니다.
 
 ```text
-NanoLLMEngine.generate(prompt, config=None) -> str
+RayKimLLMEngine.generate(prompt, config=None) -> str
 ```
 
 #### 매개변수
@@ -124,12 +127,10 @@ NanoLLMEngine.generate(prompt, config=None) -> str
 
 ```python
 import os
-
-from nano_llm import NanoLLMEngine
+from raykim_llm import RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 print(engine.generate("hello"))
 ```
@@ -139,7 +140,7 @@ print(engine.generate("hello"))
 mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
 
 ```text
-NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
+RayKimLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
 ```
 
 #### 매개변수
@@ -163,11 +164,10 @@ NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, No
 
 ```python
 import os
-
-from nano_llm import InferenceConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device()
 
 for token in engine.generate_streaming(
@@ -182,7 +182,7 @@ for token in engine.generate_streaming(
 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
 
 ```text
-NanoLLMEngine.get_device_memory() -> dict[str, int]
+RayKimLLMEngine.get_device_memory() -> dict[str, int]
 ```
 
 #### 매개변수
@@ -197,19 +197,15 @@ NanoLLMEngine.get_device_memory() -> dict[str, int]
 
 ```python
 import os
-
-from nano_llm import NanoLLMEngine
+from raykim_llm import RayKimLLMEngine as Engine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
-
+engine = Engine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+print(engine.is_loaded, engine.get_device_memory())
 
 engine.unload()
+print(engine.is_loaded)
 ```
 
 ### `unload()`
@@ -217,7 +213,7 @@ engine.unload()
 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
 
 ```text
-NanoLLMEngine.unload() -> bool
+RayKimLLMEngine.unload() -> bool
 ```
 
 #### 매개변수
@@ -232,12 +228,10 @@ NanoLLMEngine.unload() -> bool
 
 ```python
 import os
-
-from nano_llm import NanoLLMEngine
+from raykim_llm import RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()
 ```
@@ -267,12 +261,10 @@ mock 생성 요청마다 전달하는 설정 객체입니다.
 
 지원하는 리터럴 값입니다.
 
-| 값 |
-| :-- |
-| `INT4` |
-| `INT8` |
-| `FP16` |
-| `FP32` |
+- `INT4`
+- `INT8`
+- `FP16`
+- `FP32`
 
 ## 예외 타입
 
@@ -280,10 +272,12 @@ mock 생성 요청마다 전달하는 설정 객체입니다.
 | :-- | :-- | :-- |
 | `DeviceNotFoundError` | `load_to_device()` | 모의 하드웨어 환경 변수가 없을 때 발생합니다. |
 | `GenerationError` | `generate()`, `generate_streaming()` | 로드되지 않은 엔진에서 생성 호출이 실행될 때 발생합니다. |
+{/* API-GENERATED:END */}
 
 ## 함께 보기
 
 - [v1 to v2 마이그레이션](/ko/docs/migration/v1-to-v2)
-- [빠른 시작](/ko/docs/guides/quickstart)
+- [생성 출력 메타데이터 추가](/ko/docs/changes/code-block-refresh)
+- [세션 상태와 메모리 텔레메트리](/ko/docs/changes/sidebar-and-shell)
 - [추론 파이프라인 튜토리얼](/ko/docs/tutorials/inference-pipeline)
 - [핵심 개념](/ko/docs/guides/concepts)

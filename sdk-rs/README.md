@@ -1,4 +1,4 @@
-# nano_llm_rs
+# raykim_llm_rs
 
 Rust extension module for mock device memory helpers.
 

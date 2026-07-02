@@ -57,11 +57,10 @@ Start with the failure shape you can see right now: startup failure, state misma
 
 	```python
 	import os
-
-	from nano_llm import NanoLLMEngine
+	from raykim_llm import RayKimLLMEngine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-	engine = NanoLLMEngine(model_path="models/mock.bin")
+	engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 	engine.load_to_device(0)
 	print(engine.generate("ready"))
 	```
@@ -90,7 +89,7 @@ Start with the failure shape you can see right now: startup failure, state misma
 	Resolution:
 
 	```python
-	from nano_llm import DeviceMemory
+	from raykim_llm import DeviceMemory
 
 	memory = DeviceMemory(total_bytes=1024 * 1024)
 	memory.allocate(256 * 1024)
@@ -119,12 +118,10 @@ Start with the failure shape you can see right now: startup failure, state misma
 
 	```python
 	import os
-
-	from nano_llm import NanoLLMEngine as Engine
+	from raykim_llm import RayKimLLMEngine as Engine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-	engine = Engine(model_path="models/mock.bin")
+	engine = Engine(model_path="models/mock-llm.bin")
 	print(engine.is_loaded)
 
 	engine.load_to_device(0)
@@ -156,12 +153,10 @@ Start with the failure shape you can see right now: startup failure, state misma
 
 	```python
 	import os
-
-	from nano_llm import InferenceConfig, NanoLLMEngine
+	from raykim_llm import InferenceConfig, RayKimLLMEngine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-	engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
+	engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 	engine.load_to_device(0)
 	print(engine.generate("status", InferenceConfig(max_tokens=32)))
 	```
@@ -182,12 +177,10 @@ Start with the failure shape you can see right now: startup failure, state misma
 
 	```python
 	import os
-
-	from nano_llm import NanoLLMEngine
+	from raykim_llm import RayKimLLMEngine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-	engine = NanoLLMEngine(model_path="models/mock.bin")
+	engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 	engine.load_to_device(0)
 
 	tokens = list(engine.generate_streaming("stream test"))

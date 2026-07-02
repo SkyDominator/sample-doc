@@ -58,6 +58,7 @@
 
   figure.shiki code {
     color: var(--shiki-dark);
+    white-space: normal;
   }
 
   figure.shiki code span {
@@ -67,6 +68,7 @@
   figure.shiki .line {
     display: block;
     min-height: 1.5rem;
+    white-space: pre;
   }
 }
 

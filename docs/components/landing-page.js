@@ -16,28 +16,119 @@ import {
 import { buildNavigationGroups, getDocsHref } from "@/lib/docs";
 import { source } from "@/lib/source";
 
+const LANDING_COPY = {
+  ko: {
+    platformLabel: "API 플랫폼",
+    quickstartButton: "개발자 빠른 시작",
+    heroBadge: "Ray Kim이 설계한 문서 경험",
+    heroTitle: "RNGD 하드웨어 흐름을 빠르게 이해하는 문서 허브",
+    heroDescription:
+      "MDX 컴포넌트, 실행 가능한 예제, 자동 생성 API 레퍼런스를 한곳에 모아 RayKimLLM mock SDK의 전체 흐름을 빠르게 파악할 수 있도록 구성한 문서 사이트입니다.",
+    readDocs: "문서 읽기",
+    inspectApi: "API 레퍼런스 보기",
+    aboutBadge: "About Ray Kim",
+    aboutTitle: "문서와 지식 설계를 함께 끌어올리세요",
+    aboutDescription:
+      "Ray Kim과 함께 문서 구조, 지식 탐색, 개발자 경험을 한 단계 더 정교하게 다듬을 수 있습니다.",
+    aboutPoints: [
+      "20개 이상의 기술 문서화용 에이전트 워크플로를 설계하고 유지해 왔습니다.",
+      "정보 구조와 지식 서비스 엔지니어링 관점에서 문서 경험을 설계합니다.",
+    ],
+    startBadge: "Ray Kim과 함께 시작하기",
+    startDescription: "빠른 시작, 튜토리얼, 마이그레이션 가이드, 변경 노트, API 레퍼런스를 바로 탐색하세요.",
+    openSection: "섹션 열기",
+    changesBadge: "최근 변경 사항",
+    changesTitle: "문서 최신 업데이트",
+    changesDescription: "`changes` 문서 폴더에 정리된 릴리스 노트 형식의 변경 사항을 빠르게 훑어볼 수 있습니다.",
+    tutorialCardTitle: "튜토리얼 경로 바로 열기",
+    tutorialCardDescription: "실행 가능한 추론 파이프라인부터 시작해 전체 SDK 흐름을 따라가 보세요.",
+    tutorialCardButton: "튜토리얼 시작하기",
+    entries: {
+      guides: {
+        eyebrow: "가이드",
+        title: "핵심 개념",
+        description: "양자화, KV cache, 배치 처리, 스트리밍의 기본 개념을 정리합니다.",
+      },
+      tutorials: {
+        eyebrow: "튜토리얼",
+        title: "처음부터 끝까지 따라가는 실행 흐름",
+        description: "추론 파이프라인 튜토리얼은 구성, 로드, 생성, 점검, 복구까지 실제 SDK 도입 흐름을 닮은 경로를 제공합니다.",
+      },
+      api: {
+        eyebrow: "API",
+        title: "자동 생성 API 레퍼런스",
+        description: "소스 코드에서 추출한 계약 정보를 설명형 문서와 함께 보여 줍니다.",
+      },
+    },
+  },
+  en: {
+    platformLabel: "API Platform",
+    quickstartButton: "Developer quickstart",
+    heroBadge: "Brought by Ray Kim",
+    heroTitle: "Light-speed Inference with RNGD Hardware",
+    heroDescription:
+      "This is a mockup documentation site with mdx components, runnable snippets, and generated API reference. It is built with Next.js 14, Radix UI, Tailwind CSS, and shadcn/ui, and Vibe Coding.",
+    readDocs: "Read the docs",
+    inspectApi: "Inspect API reference",
+    aboutBadge: "About Ray Kim",
+    aboutTitle: "Let us start our prosperous journey!",
+    aboutDescription:
+      "Hire Ray Kim and get your documentation site benefitted from the world-class knowledge engineering service!",
+    aboutPoints: [
+      "Maintained More than 20 Agent Workflows for Technical Writing",
+      "Professional in Information Architecture and Knowledge Service Engineering",
+    ],
+    startBadge: "Start building with Ray Kim",
+    startDescription: "Quick-start, Tutorial, Migration Guide, Release Notes, and API Reference",
+    openSection: "Open section",
+    changesBadge: "Surface changes",
+    changesTitle: "Recent documentation changes",
+    changesDescription: "Release-note style updates rendered from the `changes` docs folder.",
+    tutorialCardTitle: "Open the tutorial path",
+    tutorialCardDescription: "Start from the runnable inference pipeline with executable snippets!",
+    tutorialCardButton: "Run through the tutorial",
+    entries: {
+      guides: {
+        eyebrow: "Guides",
+        title: "Concepts",
+        description: "Quantization, KV cache, batching, and streaming",
+      },
+      tutorials: {
+        eyebrow: "Tutorials",
+        title: "Runnable end-to-end walkthrough",
+        description:
+          "The inference pipeline tutorial mirrors a real SDK adoption path: configure, load, generate, inspect, and recover.",
+      },
+      api: {
+        eyebrow: "API",
+        title: "Auto-generated API Reference",
+        description: "Reference pages are derived from source via griffe and rendered alongside narrative docs.",
+      },
+    },
+  },
+};
+
 export function LandingPage({ currentLocale }) {
+  const copy = LANDING_COPY[currentLocale] ?? LANDING_COPY.en;
   const entries = [
     {
-      eyebrow: "Guides",
-      title: "Concepts",
-      description: "Quantization, KV cache, batching, and streaming",
+      eyebrow: copy.entries.guides.eyebrow,
+      title: copy.entries.guides.title,
+      description: copy.entries.guides.description,
       href: getDocsHref(currentLocale, ["guides", "concepts"]),
       icon: Globe,
     },
     {
-      eyebrow: "Tutorials",
-      title: "Runnable end-to-end walkthrough",
-      description:
-        "The inference pipeline tutorial mirrors a real SDK adoption path: configure, load, generate, inspect, and recover.",
+      eyebrow: copy.entries.tutorials.eyebrow,
+      title: copy.entries.tutorials.title,
+      description: copy.entries.tutorials.description,
       href: getDocsHref(currentLocale, ["tutorials", "inference-pipeline"]),
       icon: PlayCircle,
     },
     {
-      eyebrow: "API",
-      title: "Auto-generated API Reference",
-      description:
-        "Reference pages are derived from source via griffe and rendered alongside narrative docs.",
+      eyebrow: copy.entries.api.eyebrow,
+      title: copy.entries.api.title,
+      description: copy.entries.api.description,
       href: getDocsHref(currentLocale, ["api", "engine"]),
       icon: Braces,
     },
@@ -59,8 +150,8 @@ export function LandingPage({ currentLocale }) {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">API Platform</p>
-                <h1 className="mt-1 text-lg font-semibold text-slate-950">Nano LLM</h1>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">{copy.platformLabel}</p>
+                <h1 className="mt-1 text-lg font-semibold text-slate-950">RayKimLLM</h1>
               </div>
             </div>
 
@@ -68,7 +159,7 @@ export function LandingPage({ currentLocale }) {
               <LocaleSelect currentLocale={currentLocale} mode="landing" />
               <Button asChild>
                 <Link href={getDocsHref(currentLocale, ["guides", "quickstart"])}>
-                  Developer quickstart
+                  {copy.quickstartButton}
                 </Link>
               </Button>
             </div>
@@ -77,23 +168,23 @@ export function LandingPage({ currentLocale }) {
 
         <section className="grid gap-6 pb-8 pt-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)] lg:items-stretch lg:pb-12 lg:pt-12">
           <div className="rounded-[2.25rem] border border-white/80 bg-white/82 p-7 shadow-panel backdrop-blur sm:p-10">
-            <Badge>Brought by Ray Kim</Badge>
+            <Badge>{copy.heroBadge}</Badge>
             <h2 className="mt-6 max-w-4xl text-balance text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-              Light-speed Inference with RNGD Hardware
+              {copy.heroTitle}
             </h2>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-              This is a mockup documentation site with mdx components, runnable snippets, and generated API reference. It is built with Next.js 14, Radix UI, Tailwind CSS, and shadcn/ui, and Vibe Coding.
+              {copy.heroDescription}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link href={getDocsHref(currentLocale, ["guides", "quickstart"])}>
-                  Read the docs
+                  {copy.readDocs}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href={getDocsHref(currentLocale, ["api", "engine"])}>Inspect API reference</Link>
+                <Link href={getDocsHref(currentLocale, ["api", "engine"])}>{copy.inspectApi}</Link>
               </Button>
             </div>
           </div>
@@ -101,17 +192,18 @@ export function LandingPage({ currentLocale }) {
           <Card className="h-full bg-slate-950 text-white shadow-panel">
             <CardHeader>
               <Badge className="w-fit border-white/10 bg-white/10 text-white" variant="secondary">
-                About Ray Kim
+                {copy.aboutBadge}
               </Badge>
-              <CardTitle className="text-2xl text-white">Let us start our prosperous journey!</CardTitle>
+              <CardTitle className="text-2xl text-white">{copy.aboutTitle}</CardTitle>
               <CardDescription className="text-slate-300">
-                Hire Ray Kim and get your documentation site benefitted from the world-class knowledge engineering service!
+                {copy.aboutDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="space-y-4 text-sm leading-7 text-slate-300">
-                <li>Maintained More than 20 Agent Workflows for Technical Writing</li>
-                <li>Professional in Information Architecture and Knowledge Service Engineering</li>
+                {copy.aboutPoints.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
               </ul>
             </CardContent>
           </Card>
@@ -119,8 +211,8 @@ export function LandingPage({ currentLocale }) {
 
         <section className="pb-10">
           <div className="mb-6 flex items-center gap-3">
-            <Badge variant="outline">Start building with Ray Kim</Badge>
-            <p className="text-sm text-slate-500">Quick-start, Tutorial, Migration Guide, Release Notes, and API Reference</p>
+            <Badge variant="outline">{copy.startBadge}</Badge>
+            <p className="text-sm text-slate-500">{copy.startDescription}</p>
           </div>
 
           <Cards className="xl:grid-cols-3">
@@ -142,7 +234,7 @@ export function LandingPage({ currentLocale }) {
                     </CardHeader>
                     <CardContent>
                       <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-950">
-                        Open section
+                        {copy.openSection}
                         <ArrowRight className="h-4 w-4" />
                       </span>
                     </CardContent>
@@ -156,10 +248,10 @@ export function LandingPage({ currentLocale }) {
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <Card>
             <CardHeader>
-              <Badge variant="outline">Surface changes</Badge>
-              <CardTitle>Recent documentation changes</CardTitle>
+              <Badge variant="outline">{copy.changesBadge}</Badge>
+              <CardTitle>{copy.changesTitle}</CardTitle>
               <CardDescription>
-                Release-note style updates rendered from the `changes` docs folder.
+                {copy.changesDescription}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-3">
@@ -179,15 +271,15 @@ export function LandingPage({ currentLocale }) {
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                 <FlaskConical className="h-5 w-5" />
               </div>
-              <CardTitle>Open the tutorial path</CardTitle>
+              <CardTitle>{copy.tutorialCardTitle}</CardTitle>
               <CardDescription>
-                Start from the runnable inference pipeline with executable snippets!
+                {copy.tutorialCardDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild>
                 <Link href={getDocsHref(currentLocale, ["tutorials", "inference-pipeline"])}>
-                  Run through the tutorial
+                  {copy.tutorialCardButton}
                 </Link>
               </Button>
             </CardContent>

@@ -1,10 +1,10 @@
 [package]
-name = "nano_llm_rs"
+name = "raykim_llm_rs"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "nano_llm_rs"
+name = "raykim_llm_rs"
 crate-type = ["cdylib"]
 
 [dependencies]

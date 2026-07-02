@@ -9,12 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 import sys
-from typing import Any, Literal, get_args
+from typing import Any, Literal
 
 from griffe import load
 
 
 SCRIPT_ROOT = Path(__file__).resolve().parent.parent
+GENERATED_START_MARKER = "{/* API-GENERATED:START */}"
+GENERATED_END_MARKER = "{/* API-GENERATED:END */}"
 
 BUILTIN_TYPE_NAMES = {
     "Any",
@@ -47,10 +49,8 @@ STRINGS = {
     "ko": {
         "title_prefix": "API Reference",
         "description_template": "{name} API",
-        "quickstart": "빠른 시작",
         "constructor": "생성자",
         "signature": "시그니처",
-        "workflow": "사용 순서",
         "methods": "메서드",
         "functions": "함수",
         "definition": "정의",
@@ -60,29 +60,23 @@ STRINGS = {
         "raises": "예외",
         "related_types": "관련 타입",
         "errors": "예외 타입",
-        "see_also": "함께 보기",
         "example": "예제",
         "no_parameters": "매개변수 없음.",
         "field_header": "필드",
-        "value_header": "값",
         "description_header": "설명",
         "raised_by": "발생 메서드",
         "default_header": "기본값",
         "type_header": "타입",
         "parameter_header": "매개변수",
         "when_header": "조건",
-        "constructor_step": "`{name}(...)`로 인스턴스를 생성합니다.",
-        "callable_step": "`{name}()` - {summary}",
         "literal_summary": "지원하는 리터럴 값입니다.",
         "attribute_summary": "공개 타입 별칭 또는 상수입니다.",
     },
     "en": {
         "title_prefix": "API Reference",
         "description_template": "{name} API",
-        "quickstart": "Quickstart",
         "constructor": "Constructor",
         "signature": "Signature",
-        "workflow": "Typical workflow",
         "methods": "Methods",
         "functions": "Functions",
         "definition": "Definition",
@@ -92,19 +86,15 @@ STRINGS = {
         "raises": "Raises",
         "related_types": "Related types",
         "errors": "Errors",
-        "see_also": "See also",
         "example": "Example",
         "no_parameters": "No parameters.",
         "field_header": "Field",
-        "value_header": "Value",
         "description_header": "Description",
         "raised_by": "Raised by",
         "default_header": "Default",
         "type_header": "Type",
         "parameter_header": "Parameter",
         "when_header": "When",
-        "constructor_step": "Create the instance with `{name}(...)`.",
-        "callable_step": "`{name}()` - {summary}",
         "literal_summary": "Supported literal values.",
         "attribute_summary": "Public type alias or exported constant.",
     },
@@ -222,15 +212,13 @@ class PageDoc:
     constructor_signature: str | None
     constructor_parameters: list[ParameterDoc]
     callables: list[CallableDoc]
-    quickstart: ExampleDoc | None
     related_types: list[TypeDoc]
     errors: list[ErrorDoc]
-    related_pages: list[tuple[str, str]]
 
 
 def _parse_args() -> Namespace:
     parser = ArgumentParser(description="Generate API reference MDX files from SDK source.")
-    parser.add_argument("--package", default="nano_llm", help="Top-level Python package name under sdk/.")
+    parser.add_argument("--package", default="raykim_llm", help="Top-level Python package name under sdk/.")
     parser.add_argument("--sdk-root", default="sdk", help="Path to the SDK root directory.")
     parser.add_argument("--docs-root", default="docs/content/docs", help="Path to the docs content root.")
     parser.add_argument(
@@ -386,7 +374,7 @@ def _parse_target_spec(spec: str, package_name: str) -> tuple[str, str | None, s
     return module_name, symbol_name, slug
 
 
-def _default_slug_for_target(module_name: str, symbol_name: str | None, package_name: str) -> str:
+def _default_slug_for_target(module_name: str, package_name: str) -> str:
     module_tail = module_name.removeprefix(f"{package_name}.") if module_name.startswith(f"{package_name}.") else module_name
     return module_tail.replace(".", "/").replace("_", "-")
 
@@ -395,7 +383,7 @@ def _explicit_targets(config: GeneratorConfig) -> list[ApiTarget]:
     targets: list[ApiTarget] = []
     for spec in config.explicit_targets:
         module_name, symbol_name, slug = _parse_target_spec(spec, config.package_name)
-        relative_slug = slug or _default_slug_for_target(module_name, symbol_name, config.package_name)
+        relative_slug = slug or _default_slug_for_target(module_name, config.package_name)
         ko_path = config.api_root / f"{relative_slug}.mdx"
         targets.append(
             ApiTarget(
@@ -701,26 +689,6 @@ def _mdx_path_to_url(path: Path, language: str, docs_root: Path) -> str:
     return f"/{language}/docs/{slug}"
 
 
-def _find_example(snippets: list[ExampleDoc], *needles: str) -> ExampleDoc | None:
-    lowered_needles = tuple(needle.lower() for needle in needles)
-    for snippet in snippets:
-        haystack = snippet.code.lower()
-        if all(needle in haystack for needle in lowered_needles):
-            return snippet
-    return None
-
-
-def _slug_title_from_url(url: str) -> str:
-    slug = url.rstrip("/").split("/")[-1]
-    return slug.replace("-", " ").replace("_", " ").title()
-
-
-def _display_title(title: str, url: str, language: str) -> str:
-    if language == "en" and re.search(r"[가-힣]", title):
-        return _slug_title_from_url(url)
-    return title
-
-
 def _match_score(snippet: ExampleDoc, target_tokens: list[str], competing_tokens: list[str]) -> tuple[int, int, int]:
     code = snippet.code.lower()
     target_hits = sum(code.count(token) for token in target_tokens)
@@ -736,15 +704,6 @@ def _best_callable_example(name: str, all_names: list[str], snippets: list[Examp
         return None
     competing_tokens = [f".{other}(" for other in all_names if other != name]
     return max(candidates, key=lambda snippet: _match_score(snippet, target_tokens, competing_tokens))
-
-
-def _best_quickstart(subject: ApiSubject, callables: list[CallableDoc], snippets: list[ExampleDoc]) -> ExampleDoc | None:
-    subject_token = f"{subject.name.lower()}("
-    candidates = [snippet for snippet in snippets if subject_token in snippet.code.lower()]
-    if not candidates:
-        return None
-    target_tokens = [subject_token, *[f".{callable_doc.name}(" for callable_doc in callables]]
-    return max(candidates, key=lambda snippet: _match_score(snippet, target_tokens, []))
 
 
 def _annotation_tokens(text: str) -> set[str]:
@@ -861,21 +820,12 @@ def _build_page_doc(context: PackageContext, subject: ApiSubject, language: str)
         )
         method_names = [member.name for member in public_methods]
         callables = [_build_callable_doc(member, snippets, method_names, True) for member in public_methods]
-        quickstart = _best_quickstart(subject, callables, snippets)
     elif subject.kind == "function":
         constructor_parameters = []
         callables = [_build_callable_doc(subject.member, snippets, [subject.name], False)]
-        quickstart = callables[0].example
     else:
         constructor_parameters = []
         callables = []
-        quickstart = _find_example(snippets, subject.name.lower())
-
-    related_pages: dict[str, str] = {}
-    for example in [quickstart, *[callable_doc.example for callable_doc in callables if callable_doc.example]]:
-        if example is None:
-            continue
-        related_pages[example.source_url] = _display_title(example.source_title, example.source_url, language)
 
     related_types = _related_types(context, subject, constructor_parameters, callables, language)
     if subject.kind == "attribute":
@@ -888,10 +838,8 @@ def _build_page_doc(context: PackageContext, subject: ApiSubject, language: str)
         constructor_signature=_format_signature(subject.member.members["__init__"]) if subject.kind == "class" and "__init__" in subject.member.members else None,
         constructor_parameters=constructor_parameters,
         callables=callables,
-        quickstart=quickstart,
         related_types=related_types,
         errors=_error_docs(context, subject, callables),
-        related_pages=sorted(related_pages.items(), key=lambda item: item[1]),
     )
 
 
@@ -975,9 +923,8 @@ def _render_type_doc(type_doc: TypeDoc, language: str) -> str:
     if type_doc.fields:
         blocks.extend(["", _parameter_table(type_doc.fields, language, label=strings["field_header"])])
     if type_doc.values:
-        blocks.extend(["", f"| {strings['value_header']} |", "| :-- |"])
-        for value in type_doc.values:
-            blocks.append(f"| `{value}` |")
+        blocks.append("")
+        blocks.extend(f"- `{value}`" for value in type_doc.values)
     return "\n".join(blocks)
 
 
@@ -992,16 +939,12 @@ def _render_errors(errors: list[ErrorDoc], language: str) -> str:
     return "\n".join(lines)
 
 
-def _render_class_page(target: ApiTarget, page: PageDoc, language: str) -> str:
+def _render_class_page(page: PageDoc, language: str) -> str:
     strings = STRINGS[language]
-    sections = [_frontmatter(target, language, page.subject.name), "", f"# {page.subject.name}", "", page.summary]
-    quickstart = _render_example(page.quickstart, language)
-    if quickstart:
-        sections.extend(["", f"## {strings['quickstart']}", "", quickstart])
+    blocks: list[str] = []
 
     if page.constructor_signature is not None:
-        sections.extend([
-            "",
+        blocks.append("\n".join([
             f"## {strings['constructor']}",
             "",
             "```text",
@@ -1011,47 +954,31 @@ def _render_class_page(target: ApiTarget, page: PageDoc, language: str) -> str:
             f"### {strings['parameters']}",
             "",
             _parameter_table(page.constructor_parameters, language),
-        ])
+        ]))
 
     if page.callables:
-        workflow_lines = [
-            f"1. {strings['constructor_step'].format(name=page.subject.name)}",
-            *[
-                f"{idx}. {strings['callable_step'].format(name=callable_doc.name, summary=callable_doc.summary)}"
-                for idx, callable_doc in enumerate(page.callables, start=2)
-            ],
-        ]
-        sections.extend(["", f"## {strings['workflow']}", "", *workflow_lines])
-        sections.extend(["", f"## {strings['methods']}"])
+        method_sections = [f"## {strings['methods']}"]
         for callable_doc in page.callables:
-            sections.extend(["", _render_callable(callable_doc, page.subject.name, language)])
+            method_sections.extend(["", _render_callable(callable_doc, page.subject.name, language)])
+        blocks.append("\n".join(method_sections))
 
     if page.related_types:
-        sections.extend(["", f"## {strings['related_types']}"])
+        type_sections = [f"## {strings['related_types']}"]
         for type_doc in page.related_types:
-            sections.extend(["", _render_type_doc(type_doc, language)])
+            type_sections.extend(["", _render_type_doc(type_doc, language)])
+        blocks.append("\n".join(type_sections))
 
     error_block = _render_errors(page.errors, language)
     if error_block:
-        sections.extend(["", f"## {strings['errors']}", "", error_block])
+        blocks.append("\n".join([f"## {strings['errors']}", "", error_block]))
 
-    if page.related_pages:
-        sections.extend(["", f"## {strings['see_also']}", ""])
-        for url, title in page.related_pages:
-            sections.append(f"- [{title}]({url})")
-    return "\n".join(sections).strip() + "\n"
+    return "\n\n".join(blocks).strip() + "\n"
 
 
-def _render_function_page(target: ApiTarget, page: PageDoc, language: str) -> str:
+def _render_function_page(page: PageDoc, language: str) -> str:
     strings = STRINGS[language]
     callable_doc = page.callables[0]
     sections = [
-        _frontmatter(target, language, page.subject.name),
-        "",
-        f"# {page.subject.name}",
-        "",
-        page.summary,
-        "",
         f"## {strings['signature']}",
         "",
         _signature_block(page.subject.name, callable_doc.signature, callable_doc.result_annotation),
@@ -1066,9 +993,6 @@ def _render_function_page(target: ApiTarget, page: PageDoc, language: str) -> st
         sections.extend(["", f"## {strings['raises']}", "", f"| Error | {strings['when_header']} |", "| :-- | :-- |"])
         for item in callable_doc.raises:
             sections.append(f"| `{item.name}` | {item.description} |")
-    example_block = _render_example(callable_doc.example, language)
-    if example_block:
-        sections.extend(["", example_block])
     if page.related_types:
         sections.extend(["", f"## {strings['related_types']}"])
         for type_doc in page.related_types:
@@ -1076,30 +1000,60 @@ def _render_function_page(target: ApiTarget, page: PageDoc, language: str) -> st
     error_block = _render_errors(page.errors, language)
     if error_block:
         sections.extend(["", f"## {strings['errors']}", "", error_block])
-    if page.related_pages:
-        sections.extend(["", f"## {strings['see_also']}", ""])
-        for url, title in page.related_pages:
-            sections.append(f"- [{title}]({url})")
     return "\n".join(sections).strip() + "\n"
 
 
-def _render_attribute_page(target: ApiTarget, page: PageDoc, language: str) -> str:
+def _render_attribute_page(page: PageDoc, language: str) -> str:
     strings = STRINGS[language]
     type_doc = page.related_types[0] if page.related_types else TypeDoc(name=page.subject.name, summary=strings["attribute_summary"])
-    sections = [_frontmatter(target, language, page.subject.name), "", f"# {page.subject.name}", "", page.summary, "", f"## {strings['definition']}", "", _render_type_doc(type_doc, language)]
-    if page.related_pages:
-        sections.extend(["", f"## {strings['see_also']}", ""])
-        for url, title in page.related_pages:
-            sections.append(f"- [{title}]({url})")
+    sections = [f"## {strings['definition']}", "", _render_type_doc(type_doc, language)]
+    return "\n".join(sections).strip() + "\n"
+
+
+def _merge_generated_sections(existing: str, generated_sections: str) -> str | None:
+    pattern = re.compile(
+        rf"{re.escape(GENERATED_START_MARKER)}.*?{re.escape(GENERATED_END_MARKER)}",
+        re.S,
+    )
+    if not pattern.search(existing):
+        return None
+    replacement = "\n".join([
+        GENERATED_START_MARKER,
+        generated_sections.strip(),
+        GENERATED_END_MARKER,
+    ])
+    return pattern.sub(replacement, existing, count=1).rstrip() + "\n"
+
+
+def _render_document(target: ApiTarget, page: PageDoc, language: str) -> str:
+    generated_sections = _render_page(target, page, language).strip()
+    output_path = target.output_paths[language]
+    if output_path.exists():
+        existing = output_path.read_text(encoding="utf-8")
+        merged = _merge_generated_sections(existing, generated_sections)
+        if merged is not None:
+            return merged
+
+    sections = [
+        _frontmatter(target, language, page.subject.name),
+        "",
+        f"# {page.subject.name}",
+        "",
+        page.summary,
+        "",
+        GENERATED_START_MARKER,
+        generated_sections,
+        GENERATED_END_MARKER,
+    ]
     return "\n".join(sections).strip() + "\n"
 
 
 def _render_page(target: ApiTarget, page: PageDoc, language: str) -> str:
     if page.subject.kind == "class":
-        return _render_class_page(target, page, language)
+        return _render_class_page(page, language)
     if page.subject.kind == "function":
-        return _render_function_page(target, page, language)
-    return _render_attribute_page(target, page, language)
+        return _render_function_page(page, language)
+    return _render_attribute_page(page, language)
 
 
 def _write_if_changed(path: Path, content: str) -> bool:
@@ -1152,7 +1106,7 @@ def main() -> int:
         subject = _select_subject(target, context)
         for language in config.languages:
             page_doc = _build_page_doc(context, subject, language)
-            content = _render_page(target, page_doc, language)
+            content = _render_document(target, page_doc, language)
             updated = _write_if_changed(target.output_paths[language], content)
             updates.append(f"{language}:{target.slug}={updated}")
 

@@ -3,9 +3,9 @@ requires = ["setuptools>=69", "wheel", "setuptools-rust>=1.9.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nano-llm-engine"
+name = "raykim-llm"
 version = "1.0.0"
-description = "Mock LLM inference SDK for docs-as-code portfolio"
+description = "Mock RayKimLLM inference SDK for docs-as-code portfolio"
 readme = "README_SDK.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -25,7 +25,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["nano_llm*"]
+include = ["raykim_llm*"]
 
 [tool.mypy]
 python_version = "3.10"

@@ -5,8 +5,8 @@ from .config import InferenceConfig, KVCacheConfig, QuantizationType
 from .errors import DeviceNotFoundError, GenerationError
 
 
-class NanoLLMEngine:
-    """`NanoLLMEngine`는 RNGD 장치 수명주기를 흉내 내는 모의 추론 엔진입니다.
+class RayKimLLMEngine:
+    """`RayKimLLMEngine`는 RNGD 장치 수명주기를 흉내 내는 모의 추론 엔진입니다.
     인스턴스 생성, 장치 로드, 동기/스트리밍 생성, 메모리 조회, 세션 해제까지의 기본 흐름을 제공합니다.
 
     Args:

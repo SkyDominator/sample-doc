@@ -18,12 +18,10 @@ This guide summarizes what to check when moving from a v1 style centered on mini
 
 ```python
 import os
-
-from nano_llm import NanoLLMEngine
+from raykim_llm import RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 print(engine.generate("hello"))
 ```
@@ -32,12 +30,10 @@ print(engine.generate("hello"))
 
 ```python
 import os
-
-from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, KVCacheConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(
+engine = RayKimLLMEngine(
     model_path="models/mock-llm.bin",
     quantization="INT8",
     kv_cache_config=KVCacheConfig(max_seq_len=4096, cache_dtype="fp16"),

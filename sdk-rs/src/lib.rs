@@ -42,7 +42,7 @@ impl DeviceMemory {
 }
 
 #[pymodule]
-fn nano_llm_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn raykim_llm_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<DeviceMemory>()?;
     Ok(())
 }

@@ -1,0 +1,86 @@
+{
+  "$schema": "../scenario.schema.json",
+  "id": "quickstart-streaming-generate",
+  "title": "스트리밍 생성 플레이그라운드",
+  "page": "guides/quickstart",
+  "summary": "같은 mock 출력을 generate_streaming()이 반환하는 토큰 스트림으로 확인합니다. 토큰을 다시 이어 붙이면 동기 생성과 같은 문자열이 됩니다.",
+  "runtime": "python",
+  "template": "import os\nfrom raykim_llm import InferenceConfig, RayKimLLMEngine\n\nif params[\"mock_hardware\"]:\n    os.environ[\"MOCK_RNGD_HARDWARE\"] = \"true\"\nelse:\n    os.environ.pop(\"MOCK_RNGD_HARDWARE\", None)\nengine = RayKimLLMEngine(\n    model_path=\"models/mock-llm.bin\",\n    quantization=params[\"quantization\"],\n)\nengine.load_to_device(device_id=0)\n\nfor token in engine.generate_streaming(\n    params[\"prompt\"],\n    InferenceConfig(max_tokens=params[\"max_tokens\"]),\n):\n    print(token)\n\nengine.unload()\n",
+  "note": "위에서 고른 값만 바꿔 실행해 볼 수 있습니다. 스트리밍은 동기 결과를 공백 기준으로 나눠 토큰을 하나씩 내보냅니다.",
+  "explanations": {
+    "DeviceNotFoundError": "장치 연결이 꺼져 있어 세션을 시작하기 전에 실행 환경 누락을 알립니다. 엔진 고장이 아니라 보호 장치가 정상 동작한다는 신호입니다.",
+    "ValueError": "요청 설정이 허용 범위를 벗어났습니다. 잘못된 값은 생성 전에 차단되어 예측 가능한 실패로 이어집니다."
+  },
+  "controls": [
+    {
+      "name": "quantization",
+      "label": "Quantization",
+      "type": "enum",
+      "values": ["INT4", "INT8", "FP16", "FP32"],
+      "default": "INT8",
+      "source": "raykim_llm.config.QuantizationType",
+      "description": "모델 가중치의 정밀도를 선택합니다. 고른 값은 토큰 스트림 앞부분에 그대로 표시됩니다."
+    },
+    {
+      "name": "max_tokens",
+      "label": "Max tokens",
+      "type": "int",
+      "min": 1,
+      "max": 512,
+      "default": 24,
+      "source": "raykim_llm.config.InferenceConfig.max_tokens",
+      "description": "한 번에 생성할 최대 토큰 수입니다. 허용 범위를 벗어나면 오류가 발생합니다."
+    },
+    {
+      "name": "mock_hardware",
+      "label": "Mock hardware present",
+      "type": "boolean",
+      "default": true,
+      "source": "MOCK_RNGD_HARDWARE env var",
+      "description": "장치 연결 상태를 켜고 끕니다. 끄면 장치를 찾지 못해 실행이 실패합니다."
+    },
+    {
+      "name": "prompt",
+      "label": "Prompt",
+      "type": "text",
+      "max_length": 200,
+      "default": "hello",
+      "source": "raykim_llm.engine.RayKimLLMEngine.generate_streaming(prompt=...)",
+      "description": "모델에 보낼 입력 문장입니다. 스트리밍 토큰을 다시 이어 붙이면 이 문장이 그대로 담깁니다."
+    }
+  ],
+  "cases": {
+    "valid": [
+      {
+        "name": "int8-small-budget",
+        "controls": { "quantization": "INT8", "max_tokens": 8, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "output", "stdout_contains": ["[mock:INT8:tokens=8]", "hello"] }
+      },
+      {
+        "name": "fp16-default-budget",
+        "controls": { "quantization": "FP16", "max_tokens": 24, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "output", "stdout_contains": ["[mock:FP16:tokens=24]", "hello"] }
+      }
+    ],
+    "invalid": [
+      {
+        "name": "missing-hardware",
+        "status": "enforced",
+        "controls": { "quantization": "INT8", "max_tokens": 8, "mock_hardware": false, "prompt": "hello" },
+        "expect": { "kind": "exception", "type": "DeviceNotFoundError", "message_contains": "mock hardware not found" }
+      },
+      {
+        "name": "tokens-below-range",
+        "status": "enforced",
+        "controls": { "quantization": "INT8", "max_tokens": 0, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "exception", "type": "ValueError", "message_contains": "max_tokens" }
+      },
+      {
+        "name": "tokens-above-range",
+        "status": "enforced",
+        "controls": { "quantization": "INT8", "max_tokens": 100000, "mock_hardware": true, "prompt": "hello" },
+        "expect": { "kind": "exception", "type": "ValueError", "message_contains": "max_tokens" }
+      }
+    ]
+  }
+}

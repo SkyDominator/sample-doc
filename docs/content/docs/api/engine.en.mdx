@@ -1,38 +1,53 @@
 ---
-title: "API Reference: NanoLLMEngine"
-description: "The NanoLLMEngine class and related configuration types"
+title: "API Reference: RayKimLLMEngine"
+description: "The RayKimLLMEngine class and related configuration types"
 ---
 
-# NanoLLMEngine
+# RayKimLLMEngine
 
-`NanoLLMEngine` is a mock inference engine that imitates the RNGD device lifecycle.
+`RayKimLLMEngine` is a mock inference engine that imitates the RNGD device lifecycle.
 It provides the basic flow from instance creation through device load, synchronous and streaming generation, memory queries, and session shutdown.
 
 ## Quickstart
 
-#### Example
+<Tabs defaultValue="sync">
+	<TabsList>
+	<TabsTrigger value="sync">Synchronous generation</TabsTrigger>
+	<TabsTrigger value="streaming">Streaming generation</TabsTrigger>
+	</TabsList>
 
-```python
-import os
+	<TabsContent value="sync">
 
-from nano_llm import NanoLLMEngine
+	This path shows the full flow from engine creation through one blocking `generate()` call.
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
+	<Playground scenario="quickstart-sync-generate" />
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
+	</TabsContent>
 
-engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+	<TabsContent value="streaming">
 
-engine.unload()
-```
+	Use this path when you want to inspect the same mock output through the token stream returned by `generate_streaming()`.
+
+	<Playground scenario="quickstart-streaming-generate" />
+
+	</TabsContent>
+</Tabs>
+
+## Typical workflow
+
+1. Create the instance with `RayKimLLMEngine(...)`.
+2. `load_to_device()` - Open a mock device session and move the engine into a loaded state.
+3. `generate()` - Run a synchronous mock generation request.
+4. `generate_streaming()` - Yield the mock generation result through a streaming interface.
+5. `get_device_memory()` - Return mock memory telemetry for the current engine state.
+6. `unload()` - Close the mock device session and reset the engine state.
+
+{/* API-GENERATED:START */}
 
 ## Constructor
 
 ```text
-NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
+RayKimLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 ```
 
 ### Parameters
@@ -43,15 +58,6 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 | `quantization` | `QuantizationType` | `'FP16'` | Quantization label reflected in the generation output prefix. |
 | `kv_cache_config` | `KVCacheConfig | None` | `None` | KV cache configuration object stored on the engine instance. |
 
-## Typical workflow
-
-1. Create the instance with `NanoLLMEngine(...)`.
-2. `load_to_device()` - Open a mock device session and move the engine into a loaded state.
-3. `generate()` - Run a synchronous mock generation request.
-4. `generate_streaming()` - Yield the mock generation result through a streaming interface.
-5. `get_device_memory()` - Return mock memory telemetry for the current engine state.
-6. `unload()` - Close the mock device session and reset the engine state.
-
 ## Methods
 
 ### `load_to_device(device_id=0)`
@@ -59,7 +65,7 @@ NanoLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 Open a mock device session and move the engine into a loaded state.
 
 ```text
-NanoLLMEngine.load_to_device(device_id=0) -> bool
+RayKimLLMEngine.load_to_device(device_id=0) -> bool
 ```
 
 #### Parameters
@@ -82,13 +88,11 @@ Returns `True` when the mock device session is ready.
 
 ```python
 import os
-
-from nano_llm import NanoLLMEngine
-from nano_llm.errors import DeviceNotFoundError
+from raykim_llm import RayKimLLMEngine
+from raykim_llm.errors import DeviceNotFoundError
 
 os.environ.pop("MOCK_RNGD_HARDWARE", None)
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 try:
 	engine.load_to_device(0)
 except DeviceNotFoundError as exc:
@@ -100,7 +104,7 @@ except DeviceNotFoundError as exc:
 Run a synchronous mock generation request.
 
 ```text
-NanoLLMEngine.generate(prompt, config=None) -> str
+RayKimLLMEngine.generate(prompt, config=None) -> str
 ```
 
 #### Parameters
@@ -124,12 +128,10 @@ Returns a mock output string prefixed with quantization and token-budget metadat
 
 ```python
 import os
-
-from nano_llm import InferenceConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 
 cfg = InferenceConfig(batch_size=1, max_tokens=80, temperature=0.2)
@@ -142,7 +144,7 @@ print(out)
 Yield the mock generation result through a streaming interface.
 
 ```text
-NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
+RayKimLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, None]
 ```
 
 #### Parameters
@@ -166,12 +168,10 @@ Yields tokens in order by splitting the synchronous generation result on whitesp
 
 ```python
 import os
-
-from nano_llm import InferenceConfig, NanoLLMEngine
+from raykim_llm import InferenceConfig, RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device()
 
 for token in engine.generate_streaming(
@@ -186,7 +186,7 @@ for token in engine.generate_streaming(
 Return mock memory telemetry for the current engine state.
 
 ```text
-NanoLLMEngine.get_device_memory() -> dict[str, int]
+RayKimLLMEngine.get_device_memory() -> dict[str, int]
 ```
 
 #### Parameters
@@ -201,12 +201,10 @@ Returns a dictionary containing the `total_mb` and `used_mb` keys.
 
 ```python
 import os
-
-from nano_llm import NanoLLMEngine
+from raykim_llm import RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 print(engine.get_device_memory())
 
 engine.load_to_device(0)
@@ -221,7 +219,7 @@ engine.unload()
 Close the mock device session and reset the engine state.
 
 ```text
-NanoLLMEngine.unload() -> bool
+RayKimLLMEngine.unload() -> bool
 ```
 
 #### Parameters
@@ -236,12 +234,10 @@ Returns `True` when the loaded state has been cleared.
 
 ```python
 import os
-
-from nano_llm import NanoLLMEngine
+from raykim_llm import RayKimLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
+engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()
 ```
@@ -271,12 +267,10 @@ KV cache configuration object attached to the engine.
 
 Supported literal values.
 
-| Value |
-| :-- |
-| `INT4` |
-| `INT8` |
-| `FP16` |
-| `FP32` |
+- `INT4`
+- `INT8`
+- `FP16`
+- `FP32`
 
 ## Errors
 
@@ -284,6 +278,8 @@ Supported literal values.
 | :-- | :-- | :-- |
 | `DeviceNotFoundError` | `load_to_device()` | Raised when the mock hardware environment variable is missing. |
 | `GenerationError` | `generate()`, `generate_streaming()` | Raised when generation is called on an engine that has not been loaded. |
+
+{/* API-GENERATED:END */}
 
 ## See also
 

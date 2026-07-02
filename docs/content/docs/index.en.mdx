@@ -1,16 +1,16 @@
 ---
-title: nano-llm-engine
-description: Overview of the nano-llm-engine codebase
+title: RayKimLLM
+description: Overview of the RayKimLLM codebase
 ---
 
-# nano-llm-engine
+# RayKimLLM
 
-`nano-llm-engine` is a compact example codebase that models a mock LLM inference path.
+`RayKimLLM` is a compact example codebase that models a mock LLM inference path.
 Its core pieces are the Python SDK's engine lifecycle, request configuration objects, device memory abstraction, and tests that verify the behavior.
 
 ## Core components
 
-- `NanoLLMEngine`: handles device loading, synchronous generation, streaming generation, memory queries, and unload.
+- `RayKimLLMEngine`: handles device loading, synchronous generation, streaming generation, memory queries, and unload.
 - `InferenceConfig`: stores request-scoped settings such as batch size, token budget, and temperature.
 - `KVCacheConfig`: keeps KV cache length and precision labels as engine-level configuration.
 - `DeviceMemory`: a memory-pool wrapper that uses the Rust extension when available and falls back to a Python implementation otherwise.

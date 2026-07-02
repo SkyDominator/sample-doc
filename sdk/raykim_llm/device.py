@@ -26,7 +26,7 @@ class _PythonDeviceMemory:
 
 
 try:
-    from nano_llm_rs import DeviceMemory as _RustDeviceMemory  # type: ignore
+    from raykim_llm_rs import DeviceMemory as _RustDeviceMemory  # type: ignore
 except Exception:
     _RustDeviceMemory = None
 

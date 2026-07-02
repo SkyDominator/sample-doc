@@ -1,14 +1,27 @@
-name: Docs CI
+name: validate-doc
 
 on:
-  push:
+  pull_request:
     branches: [main]
+    paths:
+      - .github/workflows/docs-ci.yml
+      - .github/workflows/docs-release.yml
+      - docs/**
+      - scripts/**
+      - sdk/**
+      - README.md
+      - mypy.ini
+
+concurrency:
+  group: validate-doc-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  docs-validation:
+  validate-doc:
+    name: validate-doc
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,12 +31,14 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: sdk/pyproject.toml
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ./sdk
-          pip install pytest pytest-cov ruff mypy griffe requests pyyaml
+          pip install -e './sdk[dev]'
+          pip install requests pyyaml
 
       - name: Lint and type check
         run: |
@@ -54,6 +69,21 @@ jobs:
         env:
           MOCK_RNGD_HARDWARE: "true"
         run: python scripts/validate_snippets.py
+
+      - name: Validate playground scenarios against mock SDK
+        env:
+          MOCK_RNGD_HARDWARE: "true"
+        run: python scripts/validate_playgrounds.py
+
+      - name: Bundle SDK sources for the playground
+        run: python scripts/bundle_sdk_for_playground.py
+
+      - name: Check generated docs artifacts are committed
+        run: |
+          git diff --exit-code -- docs/content/docs docs/playground/sdk-sources.json || {
+            echo "Generated docs artifacts are out of date. Run scripts/generate_api.py, scripts/translate_docs.py, and scripts/bundle_sdk_for_playground.py, then commit the results.";
+            exit 1;
+          }
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6

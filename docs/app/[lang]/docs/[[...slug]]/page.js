@@ -16,8 +16,8 @@ import { source } from "@/lib/source";
 import { createDocsLinkComponent, getMDXComponents } from "@/components/mdx";
 
 const DEFAULT_METADATA = {
-  title: "nano-llm-engine",
-  description: "Docs-as-code portfolio for a mock LLM inference SDK.",
+  title: "RayKimLLM",
+  description: "Docs-as-code portfolio for the RayKimLLM mock inference SDK.",
 };
 
 function findNeighbors(items, currentUrl) {
@@ -134,7 +134,7 @@ export async function generateMetadata({ params }) {
   if (!page) return DEFAULT_METADATA;
 
   return {
-    title: `${page.data.title} | nano-llm-engine`,
+    title: `${page.data.title} | RayKimLLM`,
     description: page.data.description ?? DEFAULT_METADATA.description,
   };
 }

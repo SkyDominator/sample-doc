@@ -72,9 +72,7 @@ export function getDocsHref(locale, slugs = []) {
 export function getLandingHref(locale) {
   const normalizedLocale = isValidDocLocale(locale) ? locale : DEFAULT_DOC_LOCALE;
 
-  return normalizedLocale === DEFAULT_DOC_LOCALE
-    ? "/"
-    : `/${normalizedLocale}`;
+  return `/${normalizedLocale}`;
 }
 
 export function getSectionMeta(section) {
