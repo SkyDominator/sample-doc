@@ -5,7 +5,7 @@
   "page": "guides/quickstart",
   "summary": "같은 mock 출력을 generate_streaming()이 반환하는 토큰 스트림으로 확인합니다. 토큰을 다시 이어 붙이면 동기 생성과 같은 문자열이 됩니다.",
   "runtime": "python",
-  "template": "import os\nfrom nano_llm import InferenceConfig, NanoLLMEngine\n\nif params[\"mock_hardware\"]:\n    os.environ[\"MOCK_RNGD_HARDWARE\"] = \"true\"\nelse:\n    os.environ.pop(\"MOCK_RNGD_HARDWARE\", None)\nengine = NanoLLMEngine(\n    model_path=\"models/mock-llm.bin\",\n    quantization=params[\"quantization\"],\n)\nengine.load_to_device(device_id=0)\nfor token in engine.generate_streaming(\n    params[\"prompt\"],\n    InferenceConfig(max_tokens=params[\"max_tokens\"]),\n):\n    print(token)\nengine.unload()\n",
+  "template": "import os\nfrom nano_llm import InferenceConfig, NanoLLMEngine\n\nif params[\"mock_hardware\"]:\n    os.environ[\"MOCK_RNGD_HARDWARE\"] = \"true\"\nelse:\n    os.environ.pop(\"MOCK_RNGD_HARDWARE\", None)\nengine = NanoLLMEngine(\n    model_path=\"models/mock-llm.bin\",\n    quantization=params[\"quantization\"],\n)\nengine.load_to_device(device_id=0)\n\nfor token in engine.generate_streaming(\n    params[\"prompt\"],\n    InferenceConfig(max_tokens=params[\"max_tokens\"]),\n):\n    print(token)\n\nengine.unload()\n",
   "note": "위에서 고른 값만 바꿔 실행해 볼 수 있습니다. 스트리밍은 동기 결과를 공백 기준으로 나눠 토큰을 하나씩 내보냅니다.",
   "explanations": {
     "DeviceNotFoundError": "장치 연결이 꺼져 있어 세션을 시작하기 전에 실행 환경 누락을 알립니다. 엔진 고장이 아니라 보호 장치가 정상 동작한다는 신호입니다.",

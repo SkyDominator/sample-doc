@@ -24,11 +24,9 @@ description: 엔진 로드/언로드 상태 전환과 메모리 조회 계약이
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine as Engine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = Engine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 print(engine.is_loaded, engine.get_device_memory())

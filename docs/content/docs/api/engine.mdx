@@ -14,11 +14,9 @@ description: "NanoLLMEngine 클래스와 관련 설정 타입"
 
 ```python
 import os
-
 from nano_llm import InferenceConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device(0)
 
@@ -84,11 +82,9 @@ NanoLLMEngine.load_to_device(device_id=0) -> bool
 
 ```python
 import os
-
 from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(
     model_path="models/mock-llm.bin",
     quantization="INT8",
@@ -126,11 +122,9 @@ NanoLLMEngine.generate(prompt, config=None) -> str
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 print(engine.generate("hello"))
@@ -165,7 +159,6 @@ NanoLLMEngine.generate_streaming(prompt, config=None) -> Generator[str, None, No
 
 ```python
 import os
-
 from nano_llm import InferenceConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
@@ -199,11 +192,9 @@ NanoLLMEngine.get_device_memory() -> dict[str, int]
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine as Engine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = Engine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 print(engine.is_loaded, engine.get_device_memory())
@@ -232,11 +223,9 @@ NanoLLMEngine.unload() -> bool
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()

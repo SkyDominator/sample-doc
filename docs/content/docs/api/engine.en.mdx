@@ -14,11 +14,9 @@ It provides the basic flow from instance creation through device load, synchrono
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 print(engine.get_device_memory())
 
@@ -82,12 +80,10 @@ Returns `True` when the mock device session is ready.
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 from nano_llm.errors import DeviceNotFoundError
 
 os.environ.pop("MOCK_RNGD_HARDWARE", None)
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 try:
 	engine.load_to_device(0)
@@ -124,11 +120,9 @@ Returns a mock output string prefixed with quantization and token-budget metadat
 
 ```python
 import os
-
 from nano_llm import InferenceConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 
@@ -166,11 +160,9 @@ Yields tokens in order by splitting the synchronous generation result on whitesp
 
 ```python
 import os
-
 from nano_llm import InferenceConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device()
 
@@ -201,11 +193,9 @@ Returns a dictionary containing the `total_mb` and `used_mb` keys.
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 print(engine.get_device_memory())
 
@@ -236,11 +226,9 @@ Returns `True` when the loaded state has been cleared.
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()

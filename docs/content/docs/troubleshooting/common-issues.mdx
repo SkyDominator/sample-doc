@@ -57,7 +57,6 @@ description: 자주 발생하는 오류와 해결 방법
 
 	```python
 	import os
-
 	from nano_llm import NanoLLMEngine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
@@ -119,11 +118,9 @@ description: 자주 발생하는 오류와 해결 방법
 
 	```python
 	import os
-
 	from nano_llm import NanoLLMEngine as Engine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 	engine = Engine(model_path="models/mock.bin")
 	print(engine.is_loaded)
 
@@ -156,11 +153,9 @@ description: 자주 발생하는 오류와 해결 방법
 
 	```python
 	import os
-
 	from nano_llm import InferenceConfig, NanoLLMEngine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 	engine = NanoLLMEngine(model_path="models/mock.bin", quantization="INT8")
 	engine.load_to_device(0)
 	print(engine.generate("status", InferenceConfig(max_tokens=32)))
@@ -182,11 +177,9 @@ description: 자주 발생하는 오류와 해결 방법
 
 	```python
 	import os
-
 	from nano_llm import NanoLLMEngine
 
 	os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 	engine = NanoLLMEngine(model_path="models/mock.bin")
 	engine.load_to_device(0)
 

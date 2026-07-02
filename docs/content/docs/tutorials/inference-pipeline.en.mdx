@@ -22,11 +22,9 @@ This page is meant to be followed top to bottom. Each section isolates one check
 
 ```python
 import os
-
 from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(
     model_path="models/mock-llm.bin",
     quantization="INT8",
@@ -49,11 +47,9 @@ engine.load_to_device(device_id=0)
 
     ```python
     import os
-
     from nano_llm import InferenceConfig, NanoLLMEngine
 
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
     engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
     engine.load_to_device(device_id=0)
 
@@ -74,11 +70,9 @@ engine.load_to_device(device_id=0)
 
     ```python
     import os
-
     from nano_llm import InferenceConfig, NanoLLMEngine
 
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
     engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
     engine.load_to_device(device_id=0)
 
@@ -110,11 +104,9 @@ engine.load_to_device(device_id=0)
 
     ```python
     import os
-
     from nano_llm import NanoLLMEngine
 
     os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
     engine = NanoLLMEngine(model_path="models/mock-llm.bin")
     print(engine.get_device_memory())
 
@@ -157,12 +149,10 @@ This failure path is useful when you want to prove the environment guard is stil
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 from nano_llm.errors import DeviceNotFoundError
 
 os.environ.pop("MOCK_RNGD_HARDWARE", None)
-
 probe = NanoLLMEngine(model_path="models/mock-llm.bin")
 try:
     probe.load_to_device(0)
@@ -174,11 +164,9 @@ except DeviceNotFoundError as exc:
 
 ```python
 import os
-
 from nano_llm import NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
-
 engine = NanoLLMEngine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
 engine.unload()
