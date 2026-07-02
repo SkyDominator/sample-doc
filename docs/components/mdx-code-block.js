@@ -110,14 +110,14 @@ export function DocsCodeBlock({ children, className, ...props }) {
     if (isValidElement(child)) {
       return cloneElement(applyShikiTokenColors(child), {
         className: cn(
-          "block min-w-full bg-transparent p-0 font-mono text-[13px] leading-6 text-slate-100",
+          "block min-w-full whitespace-normal bg-transparent p-0 font-mono text-[13px] leading-6 text-slate-100",
           child.props.className
         ),
       });
     }
 
     return (
-      <code className="block min-w-full bg-transparent p-0 font-mono text-[13px] leading-6 text-slate-100">
+      <code className="block min-w-full whitespace-normal bg-transparent p-0 font-mono text-[13px] leading-6 text-slate-100">
         {Array.isArray(child) ? child.map((item) => applyShikiTokenColors(item)) : child}
       </code>
     );
