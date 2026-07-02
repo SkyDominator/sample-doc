@@ -10,22 +10,39 @@ It provides the basic flow from instance creation through device load, synchrono
 
 ## Quickstart
 
-#### Example
+<Tabs defaultValue="sync">
+	<TabsList>
+	<TabsTrigger value="sync">Synchronous generation</TabsTrigger>
+	<TabsTrigger value="streaming">Streaming generation</TabsTrigger>
+	</TabsList>
 
-```python
-import os
-from raykim_llm import RayKimLLMEngine
+	<TabsContent value="sync">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = RayKimLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
+	This path shows the full flow from engine creation through one blocking `generate()` call.
 
-engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+	<Playground scenario="quickstart-sync-generate" />
 
-engine.unload()
-```
+	</TabsContent>
+
+	<TabsContent value="streaming">
+
+	Use this path when you want to inspect the same mock output through the token stream returned by `generate_streaming()`.
+
+	<Playground scenario="quickstart-streaming-generate" />
+
+	</TabsContent>
+</Tabs>
+
+## Typical workflow
+
+1. Create the instance with `RayKimLLMEngine(...)`.
+2. `load_to_device()` - Open a mock device session and move the engine into a loaded state.
+3. `generate()` - Run a synchronous mock generation request.
+4. `generate_streaming()` - Yield the mock generation result through a streaming interface.
+5. `get_device_memory()` - Return mock memory telemetry for the current engine state.
+6. `unload()` - Close the mock device session and reset the engine state.
+
+{/* API-GENERATED:START */}
 
 ## Constructor
 
@@ -40,15 +57,6 @@ RayKimLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 | `model_path` | `str` | - | Path to the compiled mock model artifact. |
 | `quantization` | `QuantizationType` | `'FP16'` | Quantization label reflected in the generation output prefix. |
 | `kv_cache_config` | `KVCacheConfig | None` | `None` | KV cache configuration object stored on the engine instance. |
-
-## Typical workflow
-
-1. Create the instance with `RayKimLLMEngine(...)`.
-2. `load_to_device()` - Open a mock device session and move the engine into a loaded state.
-3. `generate()` - Run a synchronous mock generation request.
-4. `generate_streaming()` - Yield the mock generation result through a streaming interface.
-5. `get_device_memory()` - Return mock memory telemetry for the current engine state.
-6. `unload()` - Close the mock device session and reset the engine state.
 
 ## Methods
 
@@ -270,6 +278,8 @@ Supported literal values.
 | :-- | :-- | :-- |
 | `DeviceNotFoundError` | `load_to_device()` | Raised when the mock hardware environment variable is missing. |
 | `GenerationError` | `generate()`, `generate_streaming()` | Raised when generation is called on an engine that has not been loaded. |
+
+{/* API-GENERATED:END */}
 
 ## See also
 

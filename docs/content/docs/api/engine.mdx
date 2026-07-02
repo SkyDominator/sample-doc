@@ -33,6 +33,16 @@ description: "RayKimLLMEngine 클래스와 관련 설정 타입"
 	</TabsContent>
 </Tabs>
 
+## 사용 순서
+
+1. `RayKimLLMEngine(...)`로 인스턴스를 생성합니다.
+2. `load_to_device()` - 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
+3. `generate()` - 동기 mock 생성 요청을 실행합니다.
+4. `generate_streaming()` - mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
+5. `get_device_memory()` - 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
+6. `unload()` - 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
+
+{/* API-GENERATED:START */}
 ## 생성자
 
 ```text
@@ -46,15 +56,6 @@ RayKimLLMEngine(model_path, quantization='FP16', kv_cache_config=None)
 | `model_path` | `str` | - | 컴파일된 mock 모델 아티팩트 경로입니다. |
 | `quantization` | `QuantizationType` | `'FP16'` | 생성 결과 접두사에 반영되는 양자화 라벨입니다. |
 | `kv_cache_config` | `KVCacheConfig | None` | `None` | 엔진 인스턴스에 보관할 KV cache 설정 객체입니다. |
-
-## 사용 순서
-
-1. `RayKimLLMEngine(...)`로 인스턴스를 생성합니다.
-2. `load_to_device()` - 모의 장치 세션을 열고 엔진을 로드 상태로 전환합니다.
-3. `generate()` - 동기 mock 생성 요청을 실행합니다.
-4. `generate_streaming()` - mock 생성 결과를 스트리밍 인터페이스로 내보냅니다.
-5. `get_device_memory()` - 현재 엔진 상태에 대한 mock 메모리 텔레메트리를 반환합니다.
-6. `unload()` - 모의 장치 세션을 닫고 엔진 상태를 초기화합니다.
 
 ## 메서드
 
@@ -271,6 +272,7 @@ mock 생성 요청마다 전달하는 설정 객체입니다.
 | :-- | :-- | :-- |
 | `DeviceNotFoundError` | `load_to_device()` | 모의 하드웨어 환경 변수가 없을 때 발생합니다. |
 | `GenerationError` | `generate()`, `generate_streaming()` | 로드되지 않은 엔진에서 생성 호출이 실행될 때 발생합니다. |
+{/* API-GENERATED:END */}
 
 ## 함께 보기
 
