@@ -60,7 +60,7 @@ export function LandingPage({ currentLocale }) {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">API Platform</p>
-                <h1 className="mt-1 text-lg font-semibold text-slate-950">Nano LLM</h1>
+                <h1 className="mt-1 text-lg font-semibold text-slate-950">RayKimLLM</h1>
               </div>
             </div>
 
