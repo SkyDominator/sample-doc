@@ -42,52 +42,12 @@ Use the tabs below when you want to compare the smallest synchronous flow agains
 
   Use this path when you want to inspect the same mock output through the token stream returned by `generate_streaming()`.
 
-  ```python
-  import os
-
-  from nano_llm import InferenceConfig, NanoLLMEngine
-
-  os.environ["MOCK_RNGD_HARDWARE"] = "true"
-  engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="FP16")
-  engine.load_to_device()
-
-  stream = engine.generate_streaming(
-	  "Summarize which settings the streaming output was generated from.",
-	  InferenceConfig(max_tokens=24, temperature=0.0),
-  )
-  for token in stream:
-	  print(token)
-
-  engine.unload()
-  ```
+  <Playground scenario="quickstart-streaming-generate" />
 
   </TabsContent>
 </Tabs>
 
-## 3. Check a failure scenario
-
-If the hardware environment variable is missing, the SDK raises an error immediately and exposes the missing runtime setup before a device session starts.
-
-<Callout type="warning" title="Expected failure">
-Use this check when you want to verify your setup logic. `DeviceNotFoundError` here means the guardrail is working, not that the mock engine is broken.
-</Callout>
-
-```python
-import os
-
-from nano_llm import NanoLLMEngine
-from nano_llm.errors import DeviceNotFoundError
-
-os.environ.pop("MOCK_RNGD_HARDWARE", None)
-
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-try:
-	engine.load_to_device(0)
-except DeviceNotFoundError as exc:
-	print(f"Expected error: {exc}")
-```
-
-## 4. Next steps
+## 3. Next steps
 
 - [Core Concepts](./concepts)
 - [API Reference](../api/engine)

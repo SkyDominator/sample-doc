@@ -322,9 +322,16 @@ export function Playground({ scenario: scenarioId }) {
             )}
           >
             {result.errorType ? (
-              <span>
-                <strong>{result.errorType}</strong>: {result.errorMessage}
-              </span>
+              <div className="space-y-1.5">
+                <p className="m-0">
+                  <strong>{result.errorType}</strong>: {result.errorMessage}
+                </p>
+                {scenario.explanations?.[result.errorType] ? (
+                  <p className="m-0 font-sans text-[11px] leading-4 text-red-600/80">
+                    {scenario.explanations[result.errorType]}
+                  </p>
+                ) : null}
+              </div>
             ) : (
               <pre className="m-0 whitespace-pre-wrap break-words">{result.stdout || "(no output)"}</pre>
             )}

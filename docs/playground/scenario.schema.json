@@ -45,6 +45,11 @@
       "type": "string",
       "description": "Reader-facing auxiliary description shown near the code, explaining in plain language what can be adjusted and what stays fixed."
     },
+    "explanations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Optional map of exception class name to a reader-facing explanation. When a run raises that exception, the playground shows the explanation beneath the error message, so a boundary outcome is self-explanatory and a dedicated failure section elsewhere becomes unnecessary."
+    },
     "controls": {
       "type": "array",
       "minItems": 1,
