@@ -1,28 +1,35 @@
 # RayKimLLM
 
-`RayKimLLM` is a small docs-as-code portfolio project.
-It includes:
+`RayKimLLM` is a docs-as-code portfolio project built around a mock LLM inference SDK and a bilingual documentation site.
 
-- a mock Python SDK for an LLM inference engine
-- a docs site built with Next.js and Fumadocs
-- automation for API generation, translation, snippet validation, and CI/CD
+It demonstrates how to keep source code, generated API references, localized docs, controlled playground scenarios, and CI validation in sync.
 
-This is a **mock example project**, not a real inference runtime.
-Its goal is to show how source code, documentation, and validation can stay in sync.
+This is a mock example project, not a real inference runtime.
 
-## What is inside this repo?
+## Current highlights
 
-- `sdk/`: the Python package for the mock inference SDK
-- `docs/`: the documentation website
-- `scripts/`: helper scripts for API docs, translation, and snippet validation
-- `.github/workflows/`: GitHub Actions workflows for validation and deployment
+- The old `nano_llm` identity was renamed across the repo to `RayKimLLM` / `raykim_llm`.
+- The docs site now has explicit Korean and English routes under `/ko` and `/en`.
+- The quickstart experience uses controlled playground scenarios for synchronous and streaming generation.
+- Playground behavior is validated in CI with the same scenario contracts used by the browser UI.
+- API pages combine hand-written narrative sections with marker-delimited generated reference sections.
+- The `main` branch is intended to be protected by the PR-only `validate-doc` workflow before release.
 
-## What can you learn from this project?
+## Repo layout
 
-- how to document a small Python SDK
-- how to write guides, tutorials, troubleshooting pages, and API references in MDX
-- how to validate runnable code snippets in CI
-- how to deploy a docs site automatically with GitHub Actions
+- `sdk/`: Python SDK package, tests, and packaging metadata
+- `sdk-rs/`: optional Rust helper crate for extension points around device-memory behavior
+- `docs/`: Next.js + Fumadocs site, MDX content, locale-aware routing, and UI components
+- `docs/playground/`: playground schema, scenario contracts, English overlay text, and browser SDK bundle
+- `scripts/`: API generation, translation, snippet validation, playground validation, and bundle generation
+- `.github/workflows/`: pull-request validation and GitHub Pages release workflows
+
+## What you can learn from this project
+
+- how to document a small Python SDK with guides, tutorials, troubleshooting docs, and generated API references
+- how to maintain bilingual MDX docs with Korean as the primary authored source
+- how to validate both runnable Python snippets and controlled interactive playground contracts in CI
+- how to gate production docs updates through pull request validation and GitHub Pages deployment
 
 ## Quick start
 
@@ -63,7 +70,7 @@ Run the SDK tests:
 python -m pytest sdk/tests/ -v
 ```
 
-Run the docs snippet validator:
+Run the static snippet validator:
 
 ```bash
 MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
@@ -83,8 +90,19 @@ pnpm --prefix docs dev
 
 Open the site in your browser:
 
+- Korean landing: `http://localhost:3000/ko`
+- English landing: `http://localhost:3000/en`
 - Korean docs: `http://localhost:3000/ko/docs`
 - English docs: `http://localhost:3000/en/docs`
+
+## Documentation model
+
+- Korean MDX pages under `docs/content/docs/**/*.mdx` are the primary authored docs.
+- English docs live in sibling `.en.mdx` files and are refreshed by `scripts/translate_docs.py`.
+- Only the quickstart flows use the interactive playground. Other examples stay as static Python fences and are executed by `scripts/validate_snippets.py`.
+- Playground contracts live in `docs/playground/scenarios/*.json`.
+- Korean playground scenario JSON is the executable source of truth. English reader-facing text comes from `docs/playground/translations.js`.
+- API pages under `docs/content/docs/api/` keep quickstart and explanatory sections hand-written, while `scripts/generate_api.py` updates only marker-delimited generated blocks.
 
 ## Common commands
 
@@ -94,7 +112,7 @@ Open the site in your browser:
 python scripts/generate_api.py
 ```
 
-This updates the API MDX pages under `docs/content/docs/api/`.
+This updates the generated API blocks under `docs/content/docs/api/`.
 
 ### Generate English docs
 
@@ -110,11 +128,15 @@ Without external credentials, use mock mode:
 TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 ```
 
-### Build the docs site
+In mock mode, the script leaves existing English outputs unchanged.
+
+### Refresh the playground SDK bundle
 
 ```bash
-pnpm --prefix docs build
+python scripts/bundle_sdk_for_playground.py
 ```
+
+Run this when `sdk/raykim_llm/*.py` changes and the browser playground must stay in sync with the SDK.
 
 ### Validate runnable Python snippets
 
@@ -128,17 +150,41 @@ MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
 MOCK_RNGD_HARDWARE=true python scripts/validate_playgrounds.py
 ```
 
+### Build the docs site
+
+```bash
+pnpm --prefix docs build
+```
+
+Do not run `pnpm --prefix docs build` while a `pnpm --prefix docs dev` process is using the same `docs/.next` directory. If the Next.js cache gets corrupted, stop the dev server, remove `docs/.next`, and build again.
+
+### Build the static export used by release
+
+```bash
+DOCS_STATIC_EXPORT=true DOCS_BASE_PATH=/sample-doc pnpm --prefix docs build
+```
+
+### Check generated docs artifacts are committed
+
+```bash
+git diff --exit-code -- docs/content/docs docs/playground/sdk-sources.json
+```
+
+This matches the generated-artifact drift check enforced by `validate-doc`.
+
 ## Recommended local workflow
 
 When you change code or docs, use this order:
 
 1. Edit the SDK or the docs.
-2. Regenerate API docs if the SDK changed.
-3. Regenerate English docs if the Korean source docs changed.
-4. Run snippet validation.
-5. Run playground validation.
-6. Run SDK tests.
-7. Preview the docs site locally.
+2. If SDK signatures changed, run `scripts/generate_api.py`.
+3. If SDK code used by the playground changed, run `scripts/bundle_sdk_for_playground.py`.
+4. If Korean docs changed, run `scripts/translate_docs.py` or its mock mode.
+5. Run snippet validation.
+6. Run playground validation.
+7. Run SDK tests.
+8. Check generated docs artifacts before opening a pull request.
+9. Preview or build the docs site.
 
 Example:
 
@@ -147,7 +193,9 @@ python scripts/generate_api.py
 TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 MOCK_RNGD_HARDWARE=true python scripts/validate_snippets.py
 MOCK_RNGD_HARDWARE=true python scripts/validate_playgrounds.py
+python scripts/bundle_sdk_for_playground.py
 python -m pytest sdk/tests/ -v
+git diff --exit-code -- docs/content/docs docs/playground/sdk-sources.json
 pnpm --prefix docs dev
 ```
 
@@ -155,35 +203,42 @@ pnpm --prefix docs dev
 
 The SDK is intentionally simple.
 
-- `RayKimLLMEngine` simulates loading a model, generating text, streaming tokens, reading device memory, and unloading.
+- `RayKimLLMEngine` simulates model load/unload, synchronous generation, streaming generation, device-memory inspection, and cleanup.
 - `MOCK_RNGD_HARDWARE=true` is required before `load_to_device()` succeeds.
-- `quantization`, `KVCacheConfig`, and `InferenceConfig` give the SDK a realistic LLM-inference shape.
-- `generate_streaming()` splits the generated string by whitespace. It does not perform real tokenization.
+- `InferenceConfig`, `KVCacheConfig`, and `QuantizationType` give the SDK a realistic LLM-inference shape.
+- `generate_streaming()` yields whitespace-split chunks rather than real tokenizer output.
+- The optional `raykim_llm_rs` helper is not required for basic docs development or tests.
 
 ## CI/CD overview
 
 This repository uses two GitHub Actions workflows.
 
-### validate-doc
+### `validate-doc`
 
 `docs-ci.yml` runs only on pull requests targeting `main`. The source branch can be any branch. It does the following:
 
 1. installs Python dependencies
-2. runs lint and type checks
-3. runs SDK tests
-4. regenerates API docs
-5. generates English docs
-6. validates Python snippets in MDX
-7. validates playground contracts against the mock SDK
-8. bundles the browser SDK sources used by the playground
-9. fails if generated docs artifacts were not committed
-10. builds the docs site
-11. checks built HTML for broken links
+2. runs lint, type checks, and SDK tests
+3. regenerates API docs and English docs
+4. validates Python snippets in MDX
+5. validates playground contracts against the mock SDK
+6. refreshes the browser SDK sources used by the playground
+7. fails if generated docs artifacts were not committed
+8. builds the docs site
+9. checks built HTML for broken links
+
+Protect `main` and require the `validate-doc` status check so pull requests cannot be merged when validation fails.
 
 ### Docs Release
 
-`docs-release.yml` runs on pushes to `main` and builds a static export of the committed docs site for GitHub Pages deployment.
-This assumes `main` is protected so only pull requests with a successful `validate-doc` check can be merged.
+`docs-release.yml` runs on pushes to `main` that change `docs/**`. It:
+
+1. installs docs dependencies
+2. builds the static export with `DOCS_STATIC_EXPORT=true`
+3. uploads the GitHub Pages artifact
+4. deploys the docs site
+
+The release workflow assumes the merged pull request already passed `validate-doc` and already committed any regenerated docs artifacts.
 
 ## Notes about translation
 
@@ -208,11 +263,12 @@ TRANSLATE_MOCK_MODE=true python scripts/translate_docs.py
 
 ## Project goal
 
-This repository is designed to show a beginner-friendly but realistic documentation workflow:
+This repository is designed to show a beginner-friendly but realistic documentation workflow where:
 
-- source code and docs live together
-- examples are executable
-- broken links are checked automatically
-- docs are deployed through CI/CD
+- source code, generated API references, and authored docs live together
+- quickstart playground behavior is contract-driven and validated
+- bilingual docs stay aligned with a primary source locale
+- broken links and runnable examples are checked automatically
+- docs are promoted to production through pull request validation and GitHub Pages deployment
 
 If you are new to docs-as-code, start with the local preview and the guides under `docs/content/docs/guides/`.
