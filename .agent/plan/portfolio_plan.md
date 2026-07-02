@@ -502,16 +502,14 @@ Build a complete, realistic **developer-facing documentation pipeline** for a mo
 Use this as the initial workflow baseline:
 
 ```yaml
-name: Docs CI
+name: validate-doc
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
-  docs-validation:
+  validate-doc:
     runs-on: ubuntu-latest
 
     steps:

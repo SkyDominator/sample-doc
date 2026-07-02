@@ -164,9 +164,9 @@ The SDK is intentionally simple.
 
 This repository uses two GitHub Actions workflows.
 
-### Docs CI
+### validate-doc
 
-`docs-ci.yml` runs on pushes to `main`, pull requests targeting `main`, and manual dispatches. It does the following:
+`docs-ci.yml` runs only on pull requests targeting `main`. The source branch can be any branch. It does the following:
 
 1. installs Python dependencies
 2. runs lint and type checks
@@ -182,8 +182,8 @@ This repository uses two GitHub Actions workflows.
 
 ### Docs Release
 
-`docs-release.yml` runs after a successful `Docs CI` run on `main`, or by manual dispatch.
-It re-runs docs generation and both validation phases, verifies generated artifacts are committed, then builds a static export of the docs site and deploys it to GitHub Pages.
+`docs-release.yml` runs on pushes to `main` and builds a static export of the committed docs site for GitHub Pages deployment.
+This assumes `main` is protected so only pull requests with a successful `validate-doc` check can be merged.
 
 ## Notes about translation
 
