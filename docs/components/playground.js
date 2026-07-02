@@ -30,6 +30,128 @@ function isWithinLimits(control, value) {
   return true;
 }
 
+function pythonLiteral(value) {
+  if (typeof value === "boolean") return value ? "True" : "False";
+  if (typeof value === "number") return Number.isNaN(value) ? "None" : String(value);
+  return JSON.stringify(String(value));
+}
+
+function isBlankLine(line) {
+  return line.trim() === "";
+}
+
+function isDeeper(line, indent) {
+  return line.startsWith(indent) && line.length > indent.length && /\s/.test(line[indent.length]);
+}
+
+function collapseBooleanBranches(code, values) {
+  const lines = code.split("\n");
+  const ifPattern = /^(\s*)if params\[(?:"([^"]+)"|'([^']+)')\]:$/;
+  const result = [];
+  let i = 0;
+
+  const collectBody = (indent) => {
+    const body = [];
+    while (i < lines.length && (isBlankLine(lines[i]) || isDeeper(lines[i], indent))) {
+      body.push(lines[i]);
+      i += 1;
+    }
+    while (body.length && isBlankLine(body[body.length - 1])) {
+      body.pop();
+      i -= 1;
+    }
+    return body;
+  };
+
+  const dedent = (body) => {
+    const firstCode = body.find((line) => !isBlankLine(line));
+    if (!firstCode) return body;
+    const pad = firstCode.match(/^\s*/)[0];
+    return body.map((line) => (line.startsWith(pad) ? line.slice(pad.length) : line));
+  };
+
+  while (i < lines.length) {
+    const match = lines[i].match(ifPattern);
+    if (!match) {
+      result.push(lines[i]);
+      i += 1;
+      continue;
+    }
+    const indent = match[1];
+    const key = match[2] ?? match[3];
+    i += 1;
+    const ifBody = collectBody(indent);
+    let elseBody = [];
+    if (i < lines.length && lines[i] === `${indent}else:`) {
+      i += 1;
+      elseBody = collectBody(indent);
+    }
+    result.push(...dedent(values[key] ? ifBody : elseBody));
+  }
+
+  return result.join("\n");
+}
+
+function resolveTemplate(template, values) {
+  const collapsed = collapseBooleanBranches(template, values);
+  return collapsed.replace(/params\[(?:"([^"]+)"|'([^']+)')\]/g, (match, doubleKey, singleKey) => {
+    const key = doubleKey ?? singleKey;
+    return key in values ? pythonLiteral(values[key]) : match;
+  });
+}
+
+const PYTHON_TOKEN =
+  /(#[^\n]*)|("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\b(import|from|as|if|elif|else|for|while|try|except|finally|with|def|class|return|yield|pass|break|continue|in|not|and|or|is|None|True|False|lambda|raise|global|nonlocal|assert|del|async|await)\b|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_]\w*)(?=\s*\()/g;
+
+const PYTHON_TOKEN_CLASS = {
+  comment: "italic text-slate-500",
+  string: "text-emerald-300",
+  keyword: "text-sky-300",
+  number: "text-amber-300",
+  call: "text-violet-300",
+};
+
+function highlightPython(code) {
+  const nodes = [];
+  let lastIndex = 0;
+  let key = 0;
+  PYTHON_TOKEN.lastIndex = 0;
+  let match = PYTHON_TOKEN.exec(code);
+  while (match !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(code.slice(lastIndex, match.index));
+    }
+    const [full, comment, string, keyword, number, call] = match;
+    const className = comment
+      ? PYTHON_TOKEN_CLASS.comment
+      : string
+        ? PYTHON_TOKEN_CLASS.string
+        : keyword
+          ? PYTHON_TOKEN_CLASS.keyword
+          : number
+            ? PYTHON_TOKEN_CLASS.number
+            : call
+              ? PYTHON_TOKEN_CLASS.call
+              : null;
+    nodes.push(
+      className ? (
+        <span key={key} className={className}>
+          {full}
+        </span>
+      ) : (
+        full
+      )
+    );
+    key += 1;
+    lastIndex = match.index + full.length;
+    match = PYTHON_TOKEN.exec(code);
+  }
+  if (lastIndex < code.length) {
+    nodes.push(code.slice(lastIndex));
+  }
+  return nodes;
+}
+
 export function Playground({ scenario: scenarioId }) {
   const scenario = PLAYGROUND_SCENARIOS[scenarioId];
   const controls = scenario?.controls ?? [];
@@ -38,6 +160,7 @@ export function Playground({ scenario: scenarioId }) {
   const [status, setStatus] = useState("idle");
   const [result, setResult] = useState(null);
   const [booted, setBooted] = useState(false);
+  const [ranParams, setRanParams] = useState(null);
 
   const workerRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -94,6 +217,7 @@ export function Playground({ scenario: scenarioId }) {
     setStatus("running");
     setResult(null);
     setBooted(true);
+    setRanParams({ ...values });
 
     timeoutRef.current = setTimeout(() => {
       terminateWorker();
@@ -122,95 +246,90 @@ export function Playground({ scenario: scenarioId }) {
     );
   }
 
+  const displayedCode = ranParams ? resolveTemplate(scenario.template, ranParams) : scenario.template;
+
   return (
-    <section className="not-prose my-8 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-soft">
-      <header className="border-b border-slate-100 bg-slate-50/70 px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="m-0 text-sm font-semibold text-slate-900">{scenario.title}</h3>
-            {scenario.summary ? (
-              <p className="m-0 mt-1 text-xs leading-5 text-slate-500">{scenario.summary}</p>
-            ) : null}
-          </div>
-          <span className="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
-            Live Python
+    <section className="not-prose my-6 space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="m-0 text-sm font-semibold text-slate-900">{scenario.title}</h3>
+          {scenario.summary ? (
+            <p className="m-0 mt-1 text-xs leading-5 text-slate-500">{scenario.summary}</p>
+          ) : null}
+        </div>
+        <span className="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
+          Live Python
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {controls.map((control) => {
+          const value = values[control.name];
+          const within = isWithinLimits(control, value);
+          return (
+            <div key={control.name} className="space-y-1.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <label className="text-xs font-semibold text-slate-700">{control.label}</label>
+                <span className={cn("text-[10px] font-medium", within ? "text-slate-400" : "text-red-500")}>
+                  {limitLabel(control)}
+                </span>
+              </div>
+              <ControlInput
+                control={control}
+                value={value}
+                within={within}
+                onChange={(next) => setValue(control.name, next)}
+              />
+              {control.description ? (
+                <p className="m-0 text-[11px] leading-4 text-slate-400">{control.description}</p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      <div>
+        <p className="m-0 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          {ranParams ? "방금 실행한 코드" : "예제 코드"}
+        </p>
+        <pre className="m-0 overflow-x-auto rounded-xl bg-slate-950 p-4 font-mono text-[12px] leading-5 text-slate-100">
+          <code>{highlightPython(displayedCode)}</code>
+        </pre>
+        {scenario.note ? (
+          <p className="m-0 mt-2 text-[11px] leading-4 text-slate-400">{scenario.note}</p>
+        ) : null}
+      </div>
+
+      <div>
+        <div className="flex items-center gap-3">
+          <Button size="sm" onClick={run} disabled={status === "running" || hasBlockingInput}>
+            {status === "running" ? "Running…" : "Run"}
+          </Button>
+          <span className="text-[11px] text-slate-400">
+            {booted
+              ? "Runs real Python in a sandboxed worker."
+              : "First run downloads the Python runtime (~a few MB)."}
           </span>
         </div>
-      </header>
 
-      <div className="grid gap-0 md:grid-cols-2">
-        <div className="space-y-4 border-b border-slate-100 p-5 md:border-b-0 md:border-r">
-          {controls.map((control) => {
-            const value = values[control.name];
-            const within = isWithinLimits(control, value);
-            return (
-              <div key={control.name} className="space-y-1.5">
-                <div className="flex items-baseline justify-between gap-2">
-                  <label className="text-xs font-semibold text-slate-700">{control.label}</label>
-                  <span className={cn("text-[10px] font-medium", within ? "text-slate-400" : "text-red-500")}>
-                    {limitLabel(control)}
-                  </span>
-                </div>
-                <ControlInput
-                  control={control}
-                  value={value}
-                  within={within}
-                  onChange={(next) => setValue(control.name, next)}
-                />
-                {control.description ? (
-                  <p className="m-0 text-[11px] leading-4 text-slate-400">{control.description}</p>
-                ) : null}
-              </div>
-            );
-          })}
-
-          {scenario.locked?.length ? (
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="m-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Locked</p>
-              <ul className="m-0 mt-1 list-disc pl-4 text-[11px] leading-5 text-slate-500">
-                {scenario.locked.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex flex-col p-5">
-          <pre className="m-0 max-h-56 flex-1 overflow-auto rounded-xl bg-slate-950 p-4 font-mono text-[12px] leading-5 text-slate-100">
-            {scenario.template}
-          </pre>
-
-          <div className="mt-3 flex items-center gap-3">
-            <Button size="sm" onClick={run} disabled={status === "running" || hasBlockingInput}>
-              {status === "running" ? "Running…" : "Run"}
-            </Button>
-            <span className="text-[11px] text-slate-400">
-              {booted
-                ? "Runs real Python in a sandboxed worker."
-                : "First run downloads the Python runtime (~a few MB)."}
-            </span>
+        {result ? (
+          <div
+            className={cn(
+              "mt-3 rounded-xl border p-3 font-mono text-[12px] leading-5",
+              result.errorType
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            )}
+          >
+            {result.errorType ? (
+              <span>
+                <strong>{result.errorType}</strong>: {result.errorMessage}
+              </span>
+            ) : (
+              <pre className="m-0 whitespace-pre-wrap break-words">{result.stdout || "(no output)"}</pre>
+            )}
           </div>
-
-          {result ? (
-            <div
-              className={cn(
-                "mt-3 rounded-xl border p-3 font-mono text-[12px] leading-5",
-                result.errorType
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-800"
-              )}
-            >
-              {result.errorType ? (
-                <span>
-                  <strong>{result.errorType}</strong>: {result.errorMessage}
-                </span>
-              ) : (
-                <pre className="m-0 whitespace-pre-wrap break-words">{result.stdout || "(no output)"}</pre>
-              )}
-            </div>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     </section>
   );

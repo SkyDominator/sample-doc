@@ -5,12 +5,8 @@
   "page": "guides/quickstart",
   "summary": "MOCK_RNGD_HARDWARE 보호 장치, quantization 라벨, 토큰 예산이 단일 generate() 결과에 어떻게 드러나는지 경계 안에서 직접 바꿔 봅니다.",
   "runtime": "python",
-  "template": "import os\n\nfrom nano_llm import InferenceConfig, NanoLLMEngine\n\n# params는 플레이그라운드 런타임이 컨트롤 값으로 주입합니다. 이 코드는 편집할 수 없습니다.\nif params[\"mock_hardware\"]:\n    os.environ[\"MOCK_RNGD_HARDWARE\"] = \"true\"\nelse:\n    os.environ.pop(\"MOCK_RNGD_HARDWARE\", None)\n\nengine = NanoLLMEngine(\n    model_path=\"models/mock-llm.bin\",\n    quantization=params[\"quantization\"],\n)\nengine.load_to_device(device_id=0)\n\nresult = engine.generate(\n    params[\"prompt\"],\n    InferenceConfig(max_tokens=params[\"max_tokens\"]),\n)\nprint(result)\n\nengine.unload()\n",
-  "locked": [
-    "import 문",
-    "엔진 생성과 load_to_device/unload 수명주기 순서",
-    "generate() 호출 구조"
-  ],
+  "template": "import os\n\nfrom nano_llm import InferenceConfig, NanoLLMEngine\n\nif params[\"mock_hardware\"]:\n    os.environ[\"MOCK_RNGD_HARDWARE\"] = \"true\"\nelse:\n    os.environ.pop(\"MOCK_RNGD_HARDWARE\", None)\n\nengine = NanoLLMEngine(\n    model_path=\"models/mock-llm.bin\",\n    quantization=params[\"quantization\"],\n)\nengine.load_to_device(device_id=0)\n\nresult = engine.generate(\n    params[\"prompt\"],\n    InferenceConfig(max_tokens=params[\"max_tokens\"]),\n)\nprint(result)\n\nengine.unload()\n",
+  "note": "위에서 고른 값만 바꿔 자유롭게 실행해 볼 수 있습니다. 모델을 불러오고 결과를 만든 뒤 장치를 정리하는 나머지 흐름은 고정되어 있어요.",
   "controls": [
     {
       "name": "quantization",
@@ -19,7 +15,7 @@
       "values": ["INT4", "INT8", "FP16", "FP32"],
       "default": "INT8",
       "source": "nano_llm.config.QuantizationType",
-      "description": "생성 결과 접두사 [mock:{quantization}:...]에 그대로 반영되는 양자화 라벨입니다."
+      "description": "모델 가중치의 정밀도를 선택합니다. 고른 값은 생성 결과 앞부분에 그대로 표시됩니다."
     },
     {
       "name": "max_tokens",
@@ -29,7 +25,7 @@
       "max": 512,
       "default": 64,
       "source": "nano_llm.config.InferenceConfig.max_tokens",
-      "description": "출력 접두사 tokens=N에 반영되는 토큰 예산입니다. 범위를 벗어나면 SDK가 예외를 발생시켜야 합니다."
+      "description": "한 번에 생성할 최대 토큰 수입니다. 허용 범위를 벗어나면 오류가 발생합니다."
     },
     {
       "name": "mock_hardware",
@@ -37,7 +33,7 @@
       "type": "boolean",
       "default": true,
       "source": "MOCK_RNGD_HARDWARE env var",
-      "description": "false면 load_to_device()가 DeviceNotFoundError를 발생시키는 보호 장치를 확인합니다."
+      "description": "장치 연결 상태를 켜고 끕니다. 끄면 장치를 찾지 못해 실행이 실패합니다."
     },
     {
       "name": "prompt",
@@ -46,7 +42,7 @@
       "max_length": 200,
       "default": "hello",
       "source": "nano_llm.engine.NanoLLMEngine.generate(prompt=...)",
-      "description": "생성 요청 프롬프트입니다. mock 엔진은 이 문자열을 접두사 뒤에 그대로 이어 붙입니다."
+      "description": "모델에 보낼 입력 문장입니다. 생성 결과 뒷부분에 그대로 이어져 나옵니다."
     }
   ],
   "cases": {
