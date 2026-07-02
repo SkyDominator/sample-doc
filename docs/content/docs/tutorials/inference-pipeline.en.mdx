@@ -77,7 +77,7 @@ engine.load_to_device(device_id=0)
     engine.load_to_device(device_id=0)
 
     for token in engine.generate_streaming(
-            "Explain how batched inference settings are reflected in streaming output.",
+            "Explain how the token budget is reflected in streaming output.",
             InferenceConfig(max_tokens=40, temperature=0.1),
     ):
             print(token)

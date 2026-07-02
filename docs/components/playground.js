@@ -1,23 +1,57 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PLAYGROUND_SCENARIOS, PLAYGROUND_SDK_SOURCES } from "@/playground";
+import { getPlaygroundScenario, PLAYGROUND_SDK_SOURCES } from "@/playground";
 
 const RUN_TIMEOUT_MS = 20000;
+const PLAYGROUND_UI = {
+  ko: {
+    runtimeLabel: "Live Python",
+    exampleCodeLabel: "예제 코드",
+    lastRunCodeLabel: "방금 실행한 코드",
+    runLabel: "실행",
+    runningLabel: "실행 중…",
+    workerReady: "샌드박스 워커에서 실제 Python을 실행합니다.",
+    firstRun: "첫 실행에서는 Python 런타임(~수 MB)을 내려받습니다.",
+    noOutput: "(출력 없음)",
+    unknownScenario: "알 수 없는 플레이그라운드 시나리오",
+    timeout: `실행 시간이 ${RUN_TIMEOUT_MS / 1000}초를 넘어 중단되었습니다.`,
+    textLimit: "자",
+  },
+  en: {
+    runtimeLabel: "Live Python",
+    exampleCodeLabel: "Example code",
+    lastRunCodeLabel: "Code from last run",
+    runLabel: "Run",
+    runningLabel: "Running…",
+    workerReady: "Runs real Python in a sandboxed worker.",
+    firstRun: "First run downloads the Python runtime (~a few MB).",
+    noOutput: "(no output)",
+    unknownScenario: "Unknown playground scenario",
+    timeout: `Execution exceeded ${RUN_TIMEOUT_MS / 1000}s and was stopped.`,
+    textLimit: "chars",
+  },
+};
 
 function initialValues(controls) {
   return Object.fromEntries(controls.map((control) => [control.name, control.default]));
 }
 
-function limitLabel(control) {
+function limitLabel(control, ui) {
   if (control.type === "enum") return control.values.join(" | ");
   if (control.type === "int" || control.type === "float") return `${control.min} – ${control.max}`;
-  if (control.type === "text") return control.max_length ? `≤ ${control.max_length} chars` : "text";
+  if (control.type === "text") return control.max_length ? `≤ ${control.max_length} ${ui.textLimit}` : "text";
   if (control.type === "boolean") return "true | false";
   return "";
+}
+
+function resolveLocale(pathname) {
+  const segment = pathname?.split("/").filter(Boolean)[0];
+  return segment === "en" ? "en" : "ko";
 }
 
 function isWithinLimits(control, value) {
@@ -153,7 +187,10 @@ function highlightPython(code) {
 }
 
 export function Playground({ scenario: scenarioId }) {
-  const scenario = PLAYGROUND_SCENARIOS[scenarioId];
+  const pathname = usePathname();
+  const locale = resolveLocale(pathname);
+  const ui = PLAYGROUND_UI[locale];
+  const scenario = getPlaygroundScenario(scenarioId, locale);
   const controls = scenario?.controls ?? [];
 
   const [values, setValues] = useState(() => initialValues(controls));
@@ -224,7 +261,7 @@ export function Playground({ scenario: scenarioId }) {
       setResult({
         stdout: "",
         errorType: "TimeoutError",
-        errorMessage: `Execution exceeded ${RUN_TIMEOUT_MS / 1000}s and was stopped.`,
+        errorMessage: ui.timeout,
       });
       setStatus("idle");
     }, RUN_TIMEOUT_MS);
@@ -236,12 +273,12 @@ export function Playground({ scenario: scenarioId }) {
       params: values,
       sdkSources: PLAYGROUND_SDK_SOURCES,
     });
-  }, [scenario, values, terminateWorker]);
+  }, [scenario, values, terminateWorker, ui.timeout]);
 
   if (!scenario) {
     return (
       <div className="not-prose my-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-        Unknown playground scenario: <code>{scenarioId}</code>
+        {ui.unknownScenario}: <code>{scenarioId}</code>
       </div>
     );
   }
@@ -258,7 +295,7 @@ export function Playground({ scenario: scenarioId }) {
           ) : null}
         </div>
         <span className="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
-          Live Python
+          {ui.runtimeLabel}
         </span>
       </div>
 
@@ -271,7 +308,7 @@ export function Playground({ scenario: scenarioId }) {
               <div className="flex items-baseline justify-between gap-2">
                 <label className="text-xs font-semibold text-slate-700">{control.label}</label>
                 <span className={cn("text-[10px] font-medium", within ? "text-slate-400" : "text-red-500")}>
-                  {limitLabel(control)}
+                  {limitLabel(control, ui)}
                 </span>
               </div>
               <ControlInput
@@ -290,7 +327,7 @@ export function Playground({ scenario: scenarioId }) {
 
       <div>
         <p className="m-0 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-          {ranParams ? "방금 실행한 코드" : "예제 코드"}
+          {ranParams ? ui.lastRunCodeLabel : ui.exampleCodeLabel}
         </p>
         <pre className="m-0 overflow-x-auto rounded-xl bg-slate-950 p-4 font-mono text-[12px] leading-5 text-slate-100">
           <code>{highlightPython(displayedCode)}</code>
@@ -303,12 +340,10 @@ export function Playground({ scenario: scenarioId }) {
       <div>
         <div className="flex items-center gap-3">
           <Button size="sm" onClick={run} disabled={status === "running" || hasBlockingInput}>
-            {status === "running" ? "Running…" : "Run"}
+            {status === "running" ? ui.runningLabel : ui.runLabel}
           </Button>
           <span className="text-[11px] text-slate-400">
-            {booted
-              ? "Runs real Python in a sandboxed worker."
-              : "First run downloads the Python runtime (~a few MB)."}
+            {booted ? ui.workerReady : ui.firstRun}
           </span>
         </div>
 
@@ -333,7 +368,7 @@ export function Playground({ scenario: scenarioId }) {
                 ) : null}
               </div>
             ) : (
-              <pre className="m-0 whitespace-pre-wrap break-words">{result.stdout || "(no output)"}</pre>
+              <pre className="m-0 whitespace-pre-wrap break-words">{result.stdout || ui.noOutput}</pre>
             )}
           </div>
         ) : null}
