@@ -10,24 +10,28 @@ description: "RayKimLLMEngine 클래스와 관련 설정 타입"
 
 ## 빠른 시작
 
-#### 예제
+<Tabs defaultValue="sync">
+	<TabsList>
+		<TabsTrigger value="sync">동기 생성</TabsTrigger>
+		<TabsTrigger value="streaming">스트리밍 생성</TabsTrigger>
+	</TabsList>
 
-```python
-import os
-from raykim_llm import InferenceConfig, RayKimLLMEngine
+	<TabsContent value="sync">
 
-os.environ["MOCK_RNGD_HARDWARE"] = "true"
-engine = RayKimLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
-engine.load_to_device(0)
+	이 경로는 엔진 생성부터 한 번의 `generate()` 호출까지 이어지는 가장 기본적인 실행 흐름입니다.
 
-out = engine.generate("status", InferenceConfig(max_tokens=32))
-tokens = list(engine.generate_streaming("status", InferenceConfig(max_tokens=32)))
+	<Playground scenario="quickstart-sync-generate" />
 
-print(out)
-print(tokens)
+	</TabsContent>
 
-engine.unload()
-```
+	<TabsContent value="streaming">
+
+	이 경로는 같은 mock 출력을 `generate_streaming()`이 반환하는 토큰 스트림 형태로 확인할 때 사용합니다.
+
+	<Playground scenario="quickstart-streaming-generate" />
+
+	</TabsContent>
+</Tabs>
 
 ## 생성자
 

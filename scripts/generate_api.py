@@ -934,6 +934,65 @@ def _render_example(example: ExampleDoc | None, language: str) -> str:
     return "\n".join([f"#### {STRINGS[language]['example']}", "", "```python", example.code, "```"])
 
 
+def _render_engine_quickstart_playground(language: str) -> str:
+    if language == "ko":
+        return "\n".join([
+            "<Tabs defaultValue=\"sync\">",
+            "\t<TabsList>",
+            "\t\t<TabsTrigger value=\"sync\">동기 생성</TabsTrigger>",
+            "\t\t<TabsTrigger value=\"streaming\">스트리밍 생성</TabsTrigger>",
+            "\t</TabsList>",
+            "",
+            "\t<TabsContent value=\"sync\">",
+            "",
+            "\t이 경로는 엔진 생성부터 한 번의 `generate()` 호출까지 이어지는 가장 기본적인 실행 흐름입니다.",
+            "",
+            "\t<Playground scenario=\"quickstart-sync-generate\" />",
+            "",
+            "\t</TabsContent>",
+            "",
+            "\t<TabsContent value=\"streaming\">",
+            "",
+            "\t이 경로는 같은 mock 출력을 `generate_streaming()`이 반환하는 토큰 스트림 형태로 확인할 때 사용합니다.",
+            "",
+            "\t<Playground scenario=\"quickstart-streaming-generate\" />",
+            "",
+            "\t</TabsContent>",
+            "</Tabs>",
+        ])
+
+    return "\n".join([
+        "<Tabs defaultValue=\"sync\">",
+        "\t<TabsList>",
+        "\t\t<TabsTrigger value=\"sync\">Synchronous generation</TabsTrigger>",
+        "\t\t<TabsTrigger value=\"streaming\">Streaming generation</TabsTrigger>",
+        "\t</TabsList>",
+        "",
+        "\t<TabsContent value=\"sync\">",
+        "",
+        "\tThis path covers the most basic flow: create the engine and execute one `generate()` call.",
+        "",
+        "\t<Playground scenario=\"quickstart-sync-generate\" />",
+        "",
+        "\t</TabsContent>",
+        "",
+        "\t<TabsContent value=\"streaming\">",
+        "",
+        "\tUse this path when you want to inspect the same mock output as a token stream returned by `generate_streaming()`.",
+        "",
+        "\t<Playground scenario=\"quickstart-streaming-generate\" />",
+        "",
+        "\t</TabsContent>",
+        "</Tabs>",
+    ])
+
+
+def _render_quickstart(page: PageDoc, target: ApiTarget, language: str) -> str:
+    if target.slug == "engine" and page.subject.name == "RayKimLLMEngine":
+        return _render_engine_quickstart_playground(language)
+    return _render_example(page.quickstart, language)
+
+
 def _render_value_section(value: ValueDoc | None, heading: str) -> list[str]:
     if value is None:
         return []
@@ -992,7 +1051,7 @@ def _render_errors(errors: list[ErrorDoc], language: str) -> str:
 def _render_class_page(target: ApiTarget, page: PageDoc, language: str) -> str:
     strings = STRINGS[language]
     sections = [_frontmatter(target, language, page.subject.name), "", f"# {page.subject.name}", "", page.summary]
-    quickstart = _render_example(page.quickstart, language)
+    quickstart = _render_quickstart(page, target, language)
     if quickstart:
         sections.extend(["", f"## {strings['quickstart']}", "", quickstart])
 
