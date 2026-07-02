@@ -64,7 +64,6 @@ STRINGS = {
         "example": "예제",
         "no_parameters": "매개변수 없음.",
         "field_header": "필드",
-        "value_header": "값",
         "description_header": "설명",
         "raised_by": "발생 메서드",
         "default_header": "기본값",
@@ -96,7 +95,6 @@ STRINGS = {
         "example": "Example",
         "no_parameters": "No parameters.",
         "field_header": "Field",
-        "value_header": "Value",
         "description_header": "Description",
         "raised_by": "Raised by",
         "default_header": "Default",
@@ -975,9 +973,8 @@ def _render_type_doc(type_doc: TypeDoc, language: str) -> str:
     if type_doc.fields:
         blocks.extend(["", _parameter_table(type_doc.fields, language, label=strings["field_header"])])
     if type_doc.values:
-        blocks.extend(["", f"| {strings['value_header']} |", "| :-- |"])
-        for value in type_doc.values:
-            blocks.append(f"| `{value}` |")
+        blocks.append("")
+        blocks.extend(f"- `{value}`" for value in type_doc.values)
     return "\n".join(blocks)
 
 

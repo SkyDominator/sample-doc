@@ -15,16 +15,18 @@ description: "NanoLLMEngine 클래스와 관련 설정 타입"
 ```python
 import os
 
-from nano_llm import NanoLLMEngine
+from nano_llm import InferenceConfig, NanoLLMEngine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
-
+engine = NanoLLMEngine(model_path="models/mock-llm.bin", quantization="INT8")
 engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+
+out = engine.generate("status", InferenceConfig(max_tokens=32))
+tokens = list(engine.generate_streaming("status", InferenceConfig(max_tokens=32)))
+
+print(out)
+print(tokens)
 
 engine.unload()
 ```
@@ -83,16 +85,16 @@ NanoLLMEngine.load_to_device(device_id=0) -> bool
 ```python
 import os
 
-from nano_llm import NanoLLMEngine
-from nano_llm.errors import DeviceNotFoundError
+from nano_llm import InferenceConfig, KVCacheConfig, NanoLLMEngine
 
-os.environ.pop("MOCK_RNGD_HARDWARE", None)
+os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-try:
-	engine.load_to_device(0)
-except DeviceNotFoundError as exc:
-	print(f"예상된 오류: {exc}")
+engine = NanoLLMEngine(
+    model_path="models/mock-llm.bin",
+    quantization="INT8",
+    kv_cache_config=KVCacheConfig(max_seq_len=8192, cache_dtype="fp16"),
+)
+engine.load_to_device(device_id=0)
 ```
 
 ### `generate(prompt, config=None)`
@@ -198,18 +200,16 @@ NanoLLMEngine.get_device_memory() -> dict[str, int]
 ```python
 import os
 
-from nano_llm import NanoLLMEngine
+from nano_llm import NanoLLMEngine as Engine
 
 os.environ["MOCK_RNGD_HARDWARE"] = "true"
 
-engine = NanoLLMEngine(model_path="models/mock-llm.bin")
-print(engine.get_device_memory())
-
+engine = Engine(model_path="models/mock-llm.bin")
 engine.load_to_device(0)
-stats = engine.get_device_memory()
-print(stats["total_mb"], stats["used_mb"])
+print(engine.is_loaded, engine.get_device_memory())
 
 engine.unload()
+print(engine.is_loaded)
 ```
 
 ### `unload()`
@@ -267,12 +267,10 @@ mock 생성 요청마다 전달하는 설정 객체입니다.
 
 지원하는 리터럴 값입니다.
 
-| 값 |
-| :-- |
-| `INT4` |
-| `INT8` |
-| `FP16` |
-| `FP32` |
+- `INT4`
+- `INT8`
+- `FP16`
+- `FP32`
 
 ## 예외 타입
 
@@ -284,6 +282,7 @@ mock 생성 요청마다 전달하는 설정 객체입니다.
 ## 함께 보기
 
 - [v1 to v2 마이그레이션](/ko/docs/migration/v1-to-v2)
-- [빠른 시작](/ko/docs/guides/quickstart)
+- [생성 출력 메타데이터 추가](/ko/docs/changes/code-block-refresh)
+- [세션 상태와 메모리 텔레메트리](/ko/docs/changes/sidebar-and-shell)
 - [추론 파이프라인 튜토리얼](/ko/docs/tutorials/inference-pipeline)
 - [핵심 개념](/ko/docs/guides/concepts)
